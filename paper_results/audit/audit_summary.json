@@ -1,0 +1,81 @@
+{
+  "generated_utc": "2026-10-14T14:32:07Z",
+  "dataset": "C:\\Users\\Delta\\Downloads\\Landmine_project\\Datasets\\landmine_combined",
+  "elapsed_sec": 84.8,
+  "split_summary": {
+    "train": {
+      "images": 5723,
+      "instances": 11691,
+      "empty_labels": 48,
+      "missing_labels": 0,
+      "zero_box_images": 48,
+      "corrups": 0
+    },
+    "valid": {
+      "images": 455,
+      "instances": 2053,
+      "empty_labels": 1,
+      "missing_labels": 0,
+      "zero_box_images": 1,
+      "corrups": 0
+    },
+    "test": {
+      "images": 221,
+      "instances": 966,
+      "empty_labels": 0,
+      "missing_labels": 0,
+      "zero_box_images": 0,
+      "corrups": 0
+    }
+  },
+  "exact_cross_split_groups": 0,
+  "exact_within_split_groups": 0,
+  "near_dup_vs_train": {
+    "<=2": 431,
+    "<=4": 597,
+    "<=6": 666,
+    "<=8": 674
+  },
+  "near_dup_same_base_key_le8": 0,
+  "base_key_collisions": {
+    "train_valid": 37,
+    "train_test": 31,
+    "valid_test": 10
+  },
+  "test_vs_valid_pairs_le8": 218,
+  "train_unique_bases": 1896,
+  "train_multi_export_bases": 1239,
+  "train_max_copies_of_one_base": 17,
+  "negatives": {
+    "train": 48,
+    "valid": 1,
+    "test": 0
+  },
+  "false_alarm_eval_supported": {
+    "image_level_test_has_negatives": false,
+    "fp_per_image_needs_negatives_for_fairness": true,
+    "note": "test has zero empty-label images; image-level specificity / balanced metrics need mine-free images"
+  },
+  "lwir_mean_saturation": 0.36806451991549505,
+  "ds0_mean_saturation": 0.2580739759859462,
+  "auto_verdict_before_manual_review": "FAIL",
+  "pass_rule": "0 exact cross-split dups AND <=0.5% val/test images with near-dup in train after manual review",
+  "manual_review": {
+    "montages_reviewed": true,
+    "near_dup_top40": "same physical scene / same mine / re-export \u2014 treat as leak",
+    "base_key_collisions": "same scene different Roboflow export \u2014 leak",
+    "same_base_phash_le8": 50,
+    "same_base_comparisons": 68,
+    "cross_split_base_groups": 76
+  },
+  "lwir_finding": {
+    "filename_says_lwir": true,
+    "content": "colour RGB with saturated marker pins",
+    "mean_sat_may_jan": 0.368,
+    "mean_sat_ds0": 0.258,
+    "resolution_may_jan": "640x512",
+    "shortcut_risk": "coloured markers may be learned instead of mine appearance"
+  },
+  "final_verdict_after_manual_review": "FAIL",
+  "phase": "STOP at Phase 1 gate; Phase 2 required"
+}
