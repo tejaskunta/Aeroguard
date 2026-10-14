@@ -1,0 +1,11 @@
+source,split,images,positives,negatives,instances,frac_positive
+Jan_lwir,test,10,10,0,77,1.0000
+Jan_lwir,train,100,100,0,740,1.0000
+Jan_lwir,valid,42,42,0,287,1.0000
+May_lwir,train,776,776,0,7706,1.0000
+ds0,test,151,148,3,148,0.9801
+ds0,train,2589,2569,20,2643,0.9923
+ds0,valid,138,131,7,131,0.9493
+ds1,test,28,26,2,28,0.9286
+ds1,train,442,442,0,461,1.0000
+ds1,valid,1,1,0,1,1.0000

@@ -1,0 +1,7 @@
+path: C:/Users/Delta/Downloads/Landmine_project/Datasets/landmine_combined_v2
+train: train/images
+val: valid/images
+test: test/images
+nc: 1
+names:
+- Landmine

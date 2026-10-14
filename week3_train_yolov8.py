@@ -111,6 +111,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--no-export", action="store_true",
                    help="Skip the ONNX export step")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--save-period", type=int, default=-1,
+                   help="Save a checkpoint every N epochs (plan: 5). -1 disables.")
     return p.parse_args()
 
 
@@ -219,6 +221,7 @@ def main() -> None:
             patience=args.patience,
             cache=cache,
             seed=args.seed,
+            save_period=args.save_period,
             name=run_name,
             project="runs/detect",
             resume=args.resume,

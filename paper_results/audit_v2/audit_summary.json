@@ -1,0 +1,63 @@
+{
+  "generated_utc": "2026-10-14T15:38:12Z",
+  "dataset": "C:\\Users\\Delta\\Downloads\\Landmine_project\\Datasets\\landmine_combined_v2",
+  "elapsed_sec": 15.7,
+  "split_summary": {
+    "train": {
+      "images": 3907,
+      "instances": 11550,
+      "empty_labels": 20,
+      "missing_labels": 0,
+      "zero_box_images": 20,
+      "corrups": 0
+    },
+    "valid": {
+      "images": 200,
+      "instances": 456,
+      "empty_labels": 7,
+      "missing_labels": 0,
+      "zero_box_images": 7,
+      "corrups": 0
+    },
+    "test": {
+      "images": 200,
+      "instances": 264,
+      "empty_labels": 5,
+      "missing_labels": 0,
+      "zero_box_images": 5,
+      "corrups": 0
+    }
+  },
+  "exact_cross_split_groups": 0,
+  "exact_within_split_groups": 0,
+  "near_dup_vs_train": {
+    "<=2": 129,
+    "<=4": 278,
+    "<=6": 379,
+    "<=8": 393
+  },
+  "near_dup_same_base_key_le8": 0,
+  "base_key_collisions": {
+    "train_valid": 0,
+    "train_test": 0,
+    "valid_test": 0
+  },
+  "test_vs_valid_pairs_le8": 187,
+  "train_unique_bases": 1844,
+  "train_multi_export_bases": 867,
+  "train_max_copies_of_one_base": 14,
+  "negatives": {
+    "train": 20,
+    "valid": 7,
+    "test": 5
+  },
+  "false_alarm_eval_supported": {
+    "image_level_test_has_negatives": true,
+    "fp_per_image_needs_negatives_for_fairness": true,
+    "note": "test has zero empty-label images; image-level specificity / balanced metrics need mine-free images"
+  },
+  "lwir_mean_saturation": 0.3827280031233,
+  "ds0_mean_saturation": 0.2464415537741198,
+  "auto_verdict_before_manual_review": "FAIL",
+  "pass_rule": "0 exact cross-split dups AND <=0.5% val/test images with near-dup in train after manual review"
+}
