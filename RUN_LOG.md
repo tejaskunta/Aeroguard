@@ -12,6 +12,7 @@ Every run and every test-set evaluation is logged here. Test evaluations before 
 | 2026-10-14 | **v2 frozen** | manifest sha256 `748322d6…c80de`; DECISIONS D014–D016 | No |
 | 2026-10-14 21:27 | **Phase 3 train start** | `week3_train_yolov8.py --data …/landmine_combined_v2/data.yaml --model yolov8s --epochs 75 --seed 0 --save-period 5 --batch 16 --name landmine_yolov8s_75ep_v2` → `logs/phase3_train.log` (PID 3632) | No (train/val only) |
 | 2026-10-14 22:17 | Phase 3 train end | EarlyStopping at **67/75** (best epoch 47, patience 20); 50 min; checkpoints every 5 ep; val (best.pt, conf 0.25): mAP50 0.9367 / mAP50-95 0.6012, P 0.9322, R 0.9189 | **Deviation:** script step 3/5 auto-ran test at conf 0.25 → test mAP50 0.9599 / mAP50-95 0.6651 written to `safemine_summary.json`. Pre-existing v1 pipeline behavior; no threshold/model decision made from it. Logged as D017; official frozen-protocol test eval happens once in Phase 5. |
+| 2026-10-14 ~22:30 | Phase 3 compliant rerun start | `week3_train_yolov8.py --batch 8 --name landmine_yolov8s_75ep_s0_v2 --save-period 5 --seed 0` → `logs/phase3_s0_batch8.log` (PID 33148). Batch 8 matches original args.yaml (D019); pilot run kept. | No (train/val only) |
 
 ## Notes
 
