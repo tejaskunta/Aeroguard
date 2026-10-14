@@ -1,0 +1,56 @@
+﻿[
+    {
+        "file":  "args.yaml",
+        "bytes":  1923,
+        "sha256":  "EEA30106B1781DBD78EBAF31A12C7F1479E7F7D9C6C02DFCD3897DC68E6E8942",
+        "verified":  true
+    },
+    {
+        "file":  "results.csv",
+        "bytes":  9206,
+        "sha256":  "E0ABFB5E432630F6EF1CCF4242C110C2722B4CBBA888D8EAE0CBB571F4F6984E",
+        "verified":  true
+    },
+    {
+        "file":  "safemine_summary.json",
+        "bytes":  846,
+        "sha256":  "0D2C9ED77AA7DD801DCC828B48A04D7DF5CE543B8BB841600F489F756F0742DB",
+        "verified":  true
+    },
+    {
+        "file":  "best.pt",
+        "bytes":  52033099,
+        "sha256":  "12B84E3D8614865F5CC0D9BB3B6F9B442FA01161E68B2EFC6B6C395536206EA1",
+        "verified":  true
+    },
+    {
+        "file":  "last.pt",
+        "bytes":  52033099,
+        "sha256":  "4A59E232C59EBEEBCE00BB5ACC5D522C59167C3395A32502172EFEEE723AC823",
+        "verified":  true
+    },
+    {
+        "file":  "best.onnx",
+        "bytes":  103625106,
+        "sha256":  "B1F027649BD2A806C0C7DA70B8639E2DE6642C7530CF854F3BC4F1E409F69B1F",
+        "verified":  true
+    },
+    {
+        "file":  "args.yaml",
+        "bytes":  1923,
+        "sha256":  "EEA30106B1781DBD78EBAF31A12C7F1479E7F7D9C6C02DFCD3897DC68E6E8942",
+        "verified":  true
+    },
+    {
+        "file":  "results.csv",
+        "bytes":  9206,
+        "sha256":  "E0ABFB5E432630F6EF1CCF4242C110C2722B4CBBA888D8EAE0CBB571F4F6984E",
+        "verified":  true
+    },
+    {
+        "file":  "safemine_summary.json",
+        "bytes":  846,
+        "sha256":  "0D2C9ED77AA7DD801DCC828B48A04D7DF5CE543B8BB841600F489F756F0742DB",
+        "verified":  true
+    }
+]
