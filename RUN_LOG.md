@@ -54,6 +54,7 @@ Every run and every test-set evaluation is logged here. Test evaluations before 
 | 2026-10-15 | Models release tree | Copied best.pt/last.pt/best.onnx + args.yaml + results.csv for yolo seeds 0/1/2; stage2 best.pt ×3; original_v1 best/last.pt → models/. SHA256SUMS.txt + models/README.md written. .gitignore: !models/**/*.pt, !models/**/*.onnx. | No |
 | 2026-10-15 | PDF reports | make_report_pdfs.py (reportlab 5.0.1) → reports/yolov8s_seed{0,1,2}_report.pdf (metrics table, training curves, confusion, PR/P/R/F1, val+test GT/pred batches, aug sample) + reports/research_summary.pdf (headline numbers, T1-T6, 9 figures, per-source, label fixes). All numbers read from committed JSON/CSV. | No (recompute from saved eval JSONs) |
 
+| 2026-10-15 | Master report PDF | make_master_report.py -> reports/master_report.pdf (23 pp): scope/protocol, environment, full dataset narrative (v1 fail, v2 method, freeze), all D001-D023 decisions, Phase 0-6 technical detail, 3-seed YOLO table, MNv3, two-stage + bootstrap + tradeoff figure, per-source, Grad-CAM E1-E6, label fixes, T1-T6, models release, touch audit #1-#14, full RUN_LOG, limitations, reproduction. All numbers from committed JSON/CSV. | No (recompute from saved artifacts) |
 ## Notes
 
 - Original v1 training (pre-this-session): `landmine_yolov8m_75ep`, finished 2026-08-15, 15h 16m 42s, conf 0.25 re-validation (see `paper_results/original_run/safemine_summary.json`).
