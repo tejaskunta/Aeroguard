@@ -10,6 +10,11 @@ weights/
 *.trt
 !yolov8n.pt.placeholder
 
+# curated model release tree (explicitly shipped to Aeroguard)
+!models/
+!models/**/*.pt
+!models/**/*.onnx
+
 # Ultralytics drops pretrained checkpoints in the working dir on first run
 yolov8*.pt
 yolo11*.pt

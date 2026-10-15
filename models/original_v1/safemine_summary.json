@@ -1,0 +1,27 @@
+{
+  "run_name": "landmine_yolov8m_75ep",
+  "finished_utc": "2026-08-15T10:52:57+00:00",
+  "base_model": "yolov8m.pt",
+  "data_yaml": "C:\\Users\\Delta\\Downloads\\Landmine_project\\Datasets\\landmine_combined\\data.yaml",
+  "epochs": 75,
+  "imgsz": 640,
+  "batch": 8,
+  "val_conf": 0.25,
+  "train_seconds": 55002.1,
+  "train_time_human": "15h 16m 42s",
+  "save_dir": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\runs\\detect\\runs\\detect\\landmine_yolov8m_75ep",
+  "metrics": {
+    "val": {
+      "precision": 0.9413696058468637,
+      "recall": 0.9537262542620555,
+      "mAP50": 0.9582915600088159,
+      "mAP50-95": 0.6238530223121934
+    },
+    "test": {
+      "precision": 0.9655418108230875,
+      "recall": 0.9572283522639934,
+      "mAP50": 0.9717692545722989,
+      "mAP50-95": 0.6360362656806526
+    }
+  }
+}
