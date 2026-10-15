@@ -1,0 +1,14 @@
+{
+  "test": {
+    "n_tp": 184,
+    "flagged": 19,
+    "thr_energy": 0.7997684836387634,
+    "median_energy": 0.9727142155170441
+  },
+  "train": {
+    "n_tp": 3887,
+    "flagged": 389,
+    "thr_energy": 0.7210972666740417,
+    "median_energy": 0.9932572841644287
+  }
+}

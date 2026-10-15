@@ -1,0 +1,28 @@
+{
+  "config": {
+    "crops": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\paper_results\\stage2\\crops",
+    "ratio": 3.0,
+    "seed": 0,
+    "epochs": 30,
+    "patience": 6,
+    "batch": 64,
+    "lr": 2e-05,
+    "max_pos_per_epoch": 2048
+  },
+  "best_epoch": 29,
+  "best_val_loss": 0.147613066032466,
+  "val_auc": 0.997256948987372,
+  "val_f1_at_0.5": 0.9181585677749361,
+  "val_precision_at_0.5": 0.9889807162534435,
+  "val_recall_at_0.5": 0.8568019093078759,
+  "train_crops": {
+    "pos_pool": 11550,
+    "neg_pool": 15411,
+    "pos_per_epoch": 2048,
+    "neg_per_epoch": 6144
+  },
+  "val_crops": {
+    "pos": 419,
+    "neg": 529
+  }
+}

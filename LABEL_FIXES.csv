@@ -1,0 +1,3 @@
+image,split,box_index,issue,evidence,action
+ds0_0801_jpg.rf.7fec8a048a84003b9dcad3f5ee1eb201.jpg,test,0,box drawn on tree trunk with no mine visible,E4 hand review (e4_failures.csv label_error); E5 lowest-energy test image (energy 0.000, n_matched 0),remove box (label fixed; metrics reported with/without via label_fix_report.py)
+ds0_0883_jpg.rf.5a0b82d51317a21637b5f97493e77bcf.jpg,test,0,box drawn on fence with no mine visible,E4 hand review (e4_failures.csv label_error); E5 lowest-energy test image (energy 0.000, n_matched 0),remove box (label fixed; metrics reported with/without via label_fix_report.py)

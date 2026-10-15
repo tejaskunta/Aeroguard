@@ -1,0 +1,1 @@
+pipeline.png, pr_curves.png, energy_in_box_hist.png, gradcam_example_grid.png, failure_gallery_fp.png, e5_audit_test.png, e3_paste.png, e3_remove.png are produced by make_tables.py (copies of phase outputs land here). The full FN gallery is paper_results/gradcam/e4_gallery/.

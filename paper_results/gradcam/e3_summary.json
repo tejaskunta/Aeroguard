@@ -1,0 +1,14 @@
+{
+  "paste": {
+    "n": 100,
+    "detected_rate_conf002": 0.65,
+    "detected_rate_conf0125": 0.63
+  },
+  "remove": {
+    "n": 100,
+    "disappeared_rate": 1.0
+  },
+  "conf": 0.02,
+  "conf2": 0.125,
+  "seed": 0
+}

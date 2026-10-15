@@ -1,0 +1,26 @@
+{
+  "n_pairs_both_positive": 182,
+  "n_yolo_positive": 182,
+  "n_base_positive": 184,
+  "yolo_enrichment": {
+    "mean": 149.13951902188768,
+    "median": 85.97604007460792
+  },
+  "mnv3_enrichment": {
+    "mean": 2.126425216822135,
+    "median": 1.8155073763675615
+  },
+  "paired_diff_yolo_minus_mnv3": {
+    "mean": 146.9969791305082,
+    "ci95": [
+      125.40628377410371,
+      169.95592962824566
+    ]
+  },
+  "stage2_crop_enrichment": {
+    "n": 244,
+    "mean": 2.1617466473882208,
+    "median": 2.12961386561446
+  },
+  "baseline_thr": 0.853
+}

@@ -67,3 +67,11 @@ backend/.env
 
 # --- jetson build logs -----------------------------------------------------
 jetson/build_engine.log
+
+# --- research artifacts: reproducible / transient ------------------------
+# stage-2 crop images (regenerate with phase5_build_crops.py)
+paper_results/stage2/crops/**/*.jpg
+# transient run logs (commands + outcomes live in RUN_LOG.md)
+logs/*.log
+logs/*.pid
+*.pid

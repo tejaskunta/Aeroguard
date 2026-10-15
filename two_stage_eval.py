@@ -184,20 +184,24 @@ def _read_gt(label_path, w, h):
 
 def build_records(yolo_weights, cls_weights, images_dir, labels_dir, conf=0.05, pad=0.2,
                   imgsz=640, crop_size=224, device=None, save_crops=None):
+    """Model glue: YOLO proposals + MobileNetV3-Large crop scores.
+
+    Uses the shared constructor and normalisation path (plan §Phase 5.2 /
+    ground rule 10): mnv3_shared.build_mnv3_large + mnv3_shared.preprocess_uint8.
+    pad=0.2 matches the training-crop rule (20% context).
+    """
     import cv2
     import torch
-    import torch.nn as nn
-    import torchvision
+    import numpy as np
     from ultralytics import YOLO
+
+    import mnv3_shared
 
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     yolo = YOLO(yolo_weights)
-    clf = torchvision.models.mobilenet_v3_large(weights=None)
-    clf.classifier[3] = nn.Linear(clf.classifier[3].in_features, 1)
+    clf = mnv3_shared.build_mnv3_large(pretrained=False)
     clf.load_state_dict(torch.load(cls_weights, map_location=device))
     clf.eval().to(device)
-    mean = torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1)
-    std = torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1)
 
     exts = (".jpg", ".jpeg", ".png", ".bmp")
     names = sorted(f for f in os.listdir(images_dir) if f.lower().endswith(exts))
@@ -224,9 +228,10 @@ def build_records(yolo_weights, cls_weights, images_dir, labels_dir, conf=0.05, 
                 cv2.imwrite(os.path.join(save_crops, f"{os.path.splitext(name)[0]}_{len(crops)}.jpg"), crop)
         probs = np.zeros(0)
         if crops:
-            x = torch.from_numpy(np.stack(crops)).permute(0, 3, 1, 2).float().div(255).to(device)
+            x = torch.from_numpy(np.stack(crops)).permute(0, 3, 1, 2).contiguous()
+            x = mnv3_shared.preprocess_uint8(x).to(device)
             with torch.no_grad():
-                probs = torch.sigmoid(clf((x - mean) / std)).squeeze(1).cpu().numpy().reshape(-1)
+                probs = torch.sigmoid(clf(x)).squeeze(1).cpu().numpy().reshape(-1)
         records.append({
             "name": name, "gt": gt,
             "dets": [{"box": [float(v) for v in bx], "conf": float(cf), "cls_p": float(p)}

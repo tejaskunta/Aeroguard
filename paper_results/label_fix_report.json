@@ -1,0 +1,87 @@
+{
+  "fix_images": [
+    "ds0_0801_jpg.rf.7fec8a048a84003b9dcad3f5ee1eb201.jpg",
+    "ds0_0883_jpg.rf.5a0b82d51317a21637b5f97493e77bcf.jpg"
+  ],
+  "boxes_removed": 2,
+  "arms": {
+    "A_yolo_only_deploy": {
+      "precision": {
+        "before": 0.4273356401384083,
+        "after": 0.4273356401384083
+      },
+      "recall": {
+        "before": 0.9762845849802372,
+        "after": 0.9840637450199203
+      },
+      "f2": {
+        "before": 0.7767295597484276,
+        "after": 0.7806573957016435
+      },
+      "fp_per_image": {
+        "before": 1.7513227513227514,
+        "after": 1.7513227513227514
+      },
+      "img_recall": {
+        "before": 1.0,
+        "after": 1.0
+      },
+      "img_precision": {
+        "before": 0.9945945945945946,
+        "after": 0.9837837837837838
+      }
+    },
+    "B_yolo_only_matched_recall": {
+      "precision": {
+        "before": 0.7616099071207431,
+        "after": 0.7616099071207431
+      },
+      "recall": {
+        "before": 0.9723320158102767,
+        "after": 0.9800796812749004
+      },
+      "f2": {
+        "before": 0.9213483146067415,
+        "after": 0.9269027882441596
+      },
+      "fp_per_image": {
+        "before": 0.4074074074074074,
+        "after": 0.4074074074074074
+      },
+      "img_recall": {
+        "before": 0.9945652173913043,
+        "after": 1.0
+      },
+      "img_precision": {
+        "before": 1.0,
+        "after": 0.994535519125683
+      }
+    },
+    "C_two_stage": {
+      "precision": {
+        "before": 0.8937728937728938,
+        "after": 0.8937728937728938
+      },
+      "recall": {
+        "before": 0.9644268774703557,
+        "after": 0.9721115537848606
+      },
+      "f2": {
+        "before": 0.9494163424124512,
+        "after": 0.9553641346906813
+      },
+      "fp_per_image": {
+        "before": 0.15343915343915343,
+        "after": 0.15343915343915343
+      },
+      "img_recall": {
+        "before": 0.9891304347826086,
+        "after": 1.0
+      },
+      "img_precision": {
+        "before": 1.0,
+        "after": 1.0
+      }
+    }
+  }
+}

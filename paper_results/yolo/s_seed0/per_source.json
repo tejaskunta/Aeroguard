@@ -1,0 +1,81 @@
+{
+  "n_sources": 3,
+  "arms": {
+    "A_yolo_only_deploy": {
+      "Jan_lwir": {
+        "images": 10,
+        "precision": 0.19518716577540107,
+        "recall": 0.948051948051948,
+        "fp_per_image": 30.1,
+        "tp": 73,
+        "fp": 301,
+        "fn": 4
+      },
+      "ds0": {
+        "images": 151,
+        "precision": 0.874251497005988,
+        "recall": 0.9864864864864865,
+        "fp_per_image": 0.1390728476821192,
+        "tp": 146,
+        "fp": 21,
+        "fn": 2
+      },
+      "ds1": {
+        "images": 28,
+        "precision": 0.7567567567567568,
+        "recall": 1.0,
+        "fp_per_image": 0.32142857142857145,
+        "tp": 28,
+        "fp": 9,
+        "fn": 0
+      },
+      "ALL": {
+        "images": 189,
+        "precision": 0.4273356401384083,
+        "recall": 0.9762845849802372,
+        "fp_per_image": 1.7513227513227514,
+        "tp": 247,
+        "fp": 331,
+        "fn": 6
+      }
+    },
+    "C_two_stage": {
+      "Jan_lwir": {
+        "images": 10,
+        "precision": 0.7692307692307693,
+        "recall": 0.9090909090909091,
+        "fp_per_image": 2.1,
+        "tp": 70,
+        "fp": 21,
+        "fn": 7
+      },
+      "ds0": {
+        "images": 151,
+        "precision": 0.9733333333333334,
+        "recall": 0.9864864864864865,
+        "fp_per_image": 0.026490066225165563,
+        "tp": 146,
+        "fp": 4,
+        "fn": 2
+      },
+      "ds1": {
+        "images": 28,
+        "precision": 0.875,
+        "recall": 1.0,
+        "fp_per_image": 0.14285714285714285,
+        "tp": 28,
+        "fp": 4,
+        "fn": 0
+      },
+      "ALL": {
+        "images": 189,
+        "precision": 0.8937728937728938,
+        "recall": 0.9644268774703557,
+        "fp_per_image": 0.15343915343915343,
+        "tp": 244,
+        "fp": 29,
+        "fn": 9
+      }
+    }
+  }
+}
