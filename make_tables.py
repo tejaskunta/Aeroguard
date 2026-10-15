@@ -116,6 +116,27 @@ def make_figures():
         axi.legend(); axi.grid(alpha=0.3)
     fig.tight_layout(); fig.savefig(figd / "pr_curves.png", dpi=160); plt.close(fig)
 
+    # --- plan §5.4 figure: FP/img vs recall for YOLO alone, arm C marked
+    rep0 = load(PR / "twostage" / "s0" / "test_report.json")
+    curve = rep0["yolo_only_curve"]
+    fig, ax = plt.subplots(figsize=(6.2, 4.4))
+    ax.plot([p["recall"] for p in curve], [p["fp_per_image"] for p in curve],
+            color="#3355bb", lw=1.8, label="YOLO alone (threshold sweep)")
+    ca = rep0["arms"]["A_yolo_only_deploy"]
+    cb = rep0["arms"]["B_yolo_only_matched_recall"]
+    cc = rep0["arms"]["C_two_stage"]
+    ax.scatter([ca["recall"]], [ca["fp_per_image"]], s=55, marker="s",
+               color="#888888", zorder=3, label="arm A (deploy OP)")
+    ax.scatter([cb["recall"]], [cb["fp_per_image"]], s=55, marker="^",
+               color="#cc6600", zorder=3, label="arm B (matched recall)")
+    ax.scatter([cc["recall"]], [cc["fp_per_image"]], s=75, marker="*",
+               color="#cc0000", zorder=4, label="arm C (two-stage)")
+    ax.set_xlabel("recall"); ax.set_ylabel("false positives per image")
+    ax.set_yscale("log"); ax.grid(alpha=0.3); ax.legend(fontsize=8)
+    ax.set_title("Two-stage trade-off (test, seed 0)")
+    fig.tight_layout(); fig.savefig(figd / "fp_recall_tradeoff.png", dpi=160)
+    plt.close(fig)
+
     # --- copy phase-produced figures the paper list asks for
     copies = [(PR / "gradcam" / "e1_hist.png", figd / "energy_in_box_hist.png"),
               (PR / "gradcam" / "e6_grid.png", figd / "gradcam_example_grid.png"),
@@ -128,7 +149,8 @@ def make_figures():
             shutil.copy(s, d)
     # E4 gallery dir (many pngs) referenced in place; make an index note
     (figd / "README.md").write_text(
-        "pipeline.png, pr_curves.png, energy_in_box_hist.png, gradcam_example_grid.png, "
+        "pipeline.png, pr_curves.png, fp_recall_tradeoff.png (plan §5.4), "
+        "energy_in_box_hist.png, gradcam_example_grid.png, "
         "failure_gallery_fp.png, e5_audit_test.png, e3_paste.png, e3_remove.png are "
         "produced by make_tables.py (copies of phase outputs land here). "
         "The full FN gallery is paper_results/gradcam/e4_gallery/.\n", encoding="utf-8")
@@ -163,7 +185,7 @@ def main():
           ["split", "images", "inst", "neg", "sources"], tex,
           "Dataset statistics and leakage audit of the frozen v2 split")
 
-    # ---------------- T2 YOLO size/latency (seed 0)
+    # ---------------- T2 YOLO size/latency (seeds 0/1/2)
     sl = load(PR / "yolo" / "s_seed0" / "size_latency.json")
     if sl.get("gflops") is None:
         # size_latency.json did not capture GFLOPs; compute here (script-file provenance)
@@ -171,26 +193,31 @@ def main():
         w = ROOT / "runs" / "detect" / "runs" / "detect" / \
             "landmine_yolov8s_75ep_s0_v2" / "weights" / "last.pt"
         sl["gflops"] = YOLO(str(w)).model.info()[3]
-    tval = load(PR / "yolo" / "s_seed0" / "val.json")
-    ttest = load(PR / "yolo" / "s_seed0" / "test.json")
-    tm = ttest["ultralytics_map"]["test"]
-    op = ttest["ops"]["op97_primary"]
+    tvals = [load(PR / "yolo" / f"s_seed{s}" / "val.json") for s in (0, 1, 2)]
+    ttests = [load(PR / "yolo" / f"s_seed{s}" / "test.json") for s in (0, 1, 2)]
+    val_m50 = [v["ultralytics_map"]["val"]["map50"] for v in tvals]
+    test_m50 = [t["ultralytics_map"]["test"]["map50"] for t in ttests]
+    op_r = [t["ops"]["op97_primary"]["recall"] for t in ttests]
+    op_p = [t["ops"]["op97_primary"]["precision"] for t in ttests]
+    op_fp = [t["ops"]["op97_primary"]["fp_per_image"] for t in ttests]
+    op_c = [t["ops"]["op97_primary"]["conf"] for t in ttests]
     md = ["| model | params | GFLOPs | weights MB | latency ms (med) | val mAP50 | test mAP50 | "
-          "test R@OP | test P@OP | FP/img@OP |", "|---|---|---|---|---|---|---|---|---|---|"]
+          "test R@OP | test P@OP | FP/img@OP | OP conf (val) |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     tex = [["yolov8s", f"{sl['params']:,}".replace(",", " "), f"{sl['gflops']:.1f}",
             f"{sl['weights_mb']:.1f}", f"{sl['latency_ms_median']:.1f}",
-            f"{tval['ultralytics_map']['val']['map50']:.4f}", f"{tm['map50']:.4f}",
-            f"{op['recall']:.4f}", f"{op['precision']:.4f}", f"{op['fp_per_image']:.3f}"]]
+            ms(val_m50, 4), ms(test_m50, 4), ms(op_r, 4), ms(op_p, 4), ms(op_fp, 3),
+            "/".join(f"{c:.2f}" for c in op_c)]]
     md.append(f"| yolov8s | {sl['params']:,} | {sl['gflops']:.1f} | {sl['weights_mb']:.1f} | "
-              f"{sl['latency_ms_median']:.1f} | {tval['ultralytics_map']['val']['map50']:.4f} | "
-              f"{tm['map50']:.4f} | {op['recall']:.4f} | {op['precision']:.4f} | "
-              f"{op['fp_per_image']:.3f} |")
-    write("t2_yolo_size", "### T2. YOLO size sweep (seed 0, PC GPU)", md,
+              f"{sl['latency_ms_median']:.1f} | {ms(val_m50, 4)} | {ms(test_m50, 4)} | "
+              f"{ms(op_r, 4)} | {ms(op_p, 4)} | {ms(op_fp, 3)} | "
+              + "/".join(f"{c:.2f}" for c in op_c) + " |")
+    write("t2_yolo_size", "### T2. YOLO size sweep (seeds 0/1/2, PC GPU)", md,
           ["n/m runs out of scope under the approved reduced budget (D-plan scope); only yolov8s "
-           "was trained on v2. Latency: PC GPU FP32, imgsz 640 (size_latency.json). "
-           "OP = recall-first conf chosen on val."],
-          ["model", "params", "GFLOPs", "MB", "ms", "val mAP50", "test mAP50", "R", "P", "FP/img"],
-          tex, "YOLOv8s operating point and cost (seed 0)")
+           "was trained on v2 (3 seeds). Metrics are mean ± std over seeds 0/1/2. "
+           "Latency: PC GPU FP32, imgsz 640 (size_latency.json, seed 0). "
+           "OP = recall-first conf chosen per seed on val (conf listed per seed)."],
+          ["model", "params", "GFLOPs", "MB", "ms", "val mAP50", "test mAP50", "R", "P", "FP/img", "OP conf"],
+          tex, "YOLOv8s operating point and cost (seeds 0/1/2)")
 
     # ---------------- T3 image-level comparison
     def mnv3_row(path, thr_key):
@@ -205,8 +232,8 @@ def main():
     a_05 = load(a_path)["test"]["thr_0.5"]
     a_rf = load(a_path)["test"]["thr_recall_first"]
 
-    op_img = ttest["ops"]["op97_primary"]["image_level"]
-    op95_img = ttest["ops"]["op95"]["image_level"]
+    yolo_op_img = [t["ops"]["op97_primary"]["image_level"] for t in ttests]
+    yolo_op95_img = [t["ops"]["op95"]["image_level"] for t in ttests]
     ts_arms = [load(PR / "twostage" / f"s{s}" / "test_report.json")["arms"]["C_two_stage"]
                for s in (0, 1, 2)]
     ts_img = []
@@ -227,17 +254,18 @@ def main():
           row("MNv3 A (recall-first thr)", [a_rf]),
           row("MNv3 A+B (thr 0.5)", ab_05),
           row("MNv3 A+B (recall-first thr)", ab_rf),
-          row("YOLO deploy (conf 0.02)", [op_img]),
-          row("YOLO op95 (conf 0.345)", [op95_img]),
+          row("YOLO deploy (conf from val)", yolo_op_img),
+          row("YOLO op95 (conf from val)", yolo_op95_img),
           row("Two-stage (arm C, 3 seeds)", ts_img)]
     tex = []
     for label, dicts in (("MNv3 A (0.5)", [a_05]), ("MNv3 A+B (RF)", ab_rf),
-                         ("YOLO deploy", [op_img]), ("Two-stage C", ts_img)):
+                         ("YOLO deploy", yolo_op_img), ("Two-stage C", ts_img)):
         tex.append([label] + [f"{ms([d.get(k) for d in dicts])}" for k in
                               ("accuracy", "balanced_accuracy", "precision", "recall", "kappa")])
     write("t3_image_level", "### T3. Image-level comparison (test)", md,
-          ["MNv3 A+B = mean ± std over seeds 0/1/2; MNv3 A and YOLO are seed 0.",
-           "YOLO deploy conf and MNv3 recall-first thresholds chosen on val only."],
+          ["MNv3 A+B = mean ± std over seeds 0/1/2; MNv3 A is seed 0; "
+           "YOLO deploy/op95 = mean ± std over seeds 0/1/2 (each seed's OP conf chosen on val).",
+           "MNv3 recall-first thresholds chosen on val only."],
           ["system", "acc", "bal acc", "P", "R", "kappa"],
           tex, "Image-level comparison on the frozen test split")
 
@@ -262,12 +290,16 @@ def main():
         md.append(f"| {arm} | {conf} | " + " | ".join(cols) + " |")
         tex.append([arm.split()[0]] + cols)
     pb = reps[0]["paired_diff_C_minus_B"]
+    rep0_cost = reps[0].get("cost", {})
     notes = [f"Paired bootstrap (seed 0): C-B precision +{pb['precision']['mean_diff']:.3f} "
              f"CI [{pb['precision']['ci95'][0]:.3f}, {pb['precision']['ci95'][1]:.3f}]; "
              f"FP/img {pb['fp_per_image']['mean_diff']:.3f} CI "
              f"[{pb['fp_per_image']['ci95'][0]:.3f}, {pb['fp_per_image']['ci95'][1]:.3f}]; "
              f"recall {pb['recall']['mean_diff']:.4f} CI "
              f"[{pb['recall']['ci95'][0]:.4f}, {pb['recall']['ci95'][1]:.4f}].",
+             f"Cost (plan §5.4, seed 0): {rep0_cost['ms_per_image']:.1f} ms/image end-to-end, "
+             f"{rep0_cost['crops_per_image_mean']:.2f} crops/image (p95 "
+             f"{rep0_cost['crops_per_image_p95']:.1f}), PC GPU FP32.",
              "Means ± std over seeds 0/1/2 for arm C; A/B are seed-independent except threshold "
              "choice (B picked per seed on val)."]
     write("t4_two_stage", "### T4. Two-stage pipeline (arms A, B, C)", md, notes,

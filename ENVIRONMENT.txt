@@ -1,8 +1,10 @@
 ENVIRONMENT.txt — SafeMine v2 research plan
-generated: 2026-10-14T21:47:36+00:00
-commit (HEAD at generation): 3d8d6a589fa5f8fabc2c7c4275bf984859dd681a  (3d8d6a5 Phase 4: shared MobileNetV3 constructor + baseline trainer (smoke-tested))
+generated: 2026-10-15
+commit (HEAD at generation): 90e1a053724327d7c5cfc5c56d519ae80b5814f8  (Phases 3-6 milestone)
   NOTE: milestone commits land at phase boundaries; RUN_LOG.md records the
   test-touch numbering and per-run commands for every phase run.
+  Test touches #13/#14 (seeds 1/2 official evals) + 3-seed table regeneration
+  land in the next commit after this file's generation.
 
 OS: Windows-10-10.0.26200-SP0
 Python: 3.11.9
