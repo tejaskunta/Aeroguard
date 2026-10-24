@@ -1,0 +1,84 @@
+{
+  "checkpoints": {
+    "leaky": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\runs\\detect\\runs\\detect\\landmine_yolov8s_75ep_leakyv1\\weights\\last.pt",
+    "clean_v2": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\runs\\detect\\runs\\detect\\landmine_yolov8s_75ep_s0_v2\\weights\\last.pt"
+  },
+  "conf": {
+    "leaky": 0.065,
+    "clean_v2": 0.02
+  },
+  "contamination": {
+    "v2_test_images": 189,
+    "groups_touching_v1_train": 140,
+    "fraction": 0.7407,
+    "clean_subset_images": 49,
+    "clean_subset_instances": 63
+  },
+  "v1_test_own_split": {
+    "map50": 0.9696510439521998,
+    "map50_95": 0.643559911021059,
+    "precision": 0.8343666961913198,
+    "recall": 0.9751552795031055,
+    "fp_per_image": null,
+    "negatives": 0
+  },
+  "full_v2_test": {
+    "leaky": {
+      "map50": 0.9939852758841067,
+      "map50_95": 0.7553085050421152,
+      "tp": 252,
+      "fp": 42,
+      "fn": 1,
+      "precision": 0.8571428571428571,
+      "recall": 0.9960474308300395,
+      "f2": 0.9647779479326187,
+      "fp_per_image": 0.2222222222222222,
+      "img_accuracy": 0.9947089947089947,
+      "img_precision": 0.9945945945945946,
+      "img_recall": 1.0
+    },
+    "clean_v2": {
+      "map50": 0.9740878399803043,
+      "tp": 247,
+      "fp": 331,
+      "fn": 6,
+      "precision": 0.4273356401384083,
+      "recall": 0.9762845849802372,
+      "f2": 0.7767295597484276,
+      "fp_per_image": 1.7513227513227514,
+      "img_accuracy": 0.9947089947089947,
+      "img_precision": 0.9945945945945946,
+      "img_recall": 1.0
+    }
+  },
+  "clean_subset": {
+    "leaky": {
+      "map50": 0.995,
+      "map50_95": 0.7250159983075856,
+      "tp": 63,
+      "fp": 10,
+      "fn": 0,
+      "precision": 0.863013698630137,
+      "recall": 1.0,
+      "f2": 0.9692307692307693,
+      "fp_per_image": 0.20408163265306123,
+      "img_accuracy": 1.0,
+      "img_precision": 1.0,
+      "img_recall": 1.0
+    },
+    "clean_v2": {
+      "map50": 0.9946923076923077,
+      "map50_95": 0.7009515003381398,
+      "tp": 63,
+      "fp": 115,
+      "fn": 0,
+      "precision": 0.3539325842696629,
+      "recall": 1.0,
+      "f2": 0.7325581395348837,
+      "fp_per_image": 2.3469387755102042,
+      "img_accuracy": 1.0,
+      "img_precision": 1.0,
+      "img_recall": 1.0
+    }
+  }
+}

@@ -76,7 +76,15 @@ jetson/build_engine.log
 # --- research artifacts: reproducible / transient ------------------------
 # stage-2 crop images (regenerate with phase5_build_crops.py)
 paper_results/stage2/crops/**/*.jpg
+paper_results/ablation/*/crops/**/*.jpg
+paper_results/ablation/*/crops/manifest.csv
+# contamination-free subset images (regenerate with make_leaky_vs_clean.py)
+paper_results/leaky_v1/clean_subset/images/
+paper_results/leaky_v1/clean_subset/labels/
 # transient run logs (commands + outcomes live in RUN_LOG.md)
 logs/*.log
+logs/*.out
+logs/*.err
+logs/_tmp_*
 logs/*.pid
 *.pid

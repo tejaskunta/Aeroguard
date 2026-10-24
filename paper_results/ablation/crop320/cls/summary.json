@@ -1,0 +1,28 @@
+{
+  "config": {
+    "crops": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\paper_results\\ablation\\crop320\\crops",
+    "ratio": 1.0,
+    "seed": 0,
+    "epochs": 30,
+    "patience": 6,
+    "batch": 64,
+    "lr": 2e-05,
+    "max_pos_per_epoch": 2048
+  },
+  "best_epoch": 30,
+  "best_val_loss": 0.11138485945792641,
+  "val_auc": 0.9973201113462155,
+  "val_f1_at_0.5": 0.9447236180904524,
+  "val_precision_at_0.5": 0.9973474801061007,
+  "val_recall_at_0.5": 0.8973747016706444,
+  "train_crops": {
+    "pos_pool": 11550,
+    "neg_pool": 15411,
+    "pos_per_epoch": 2048,
+    "neg_per_epoch": 2048
+  },
+  "val_crops": {
+    "pos": 419,
+    "neg": 529
+  }
+}

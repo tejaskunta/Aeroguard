@@ -1,0 +1,7 @@
+{
+  "pos": 419,
+  "neg_random_bg": 522,
+  "neg_yolo_fp": 0,
+  "neg_empty_image": 7,
+  "neg_total": 529
+}

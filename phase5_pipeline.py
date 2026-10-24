@@ -77,6 +77,8 @@ def main() -> int:
     ap.add_argument("--protect-grid", default="0.4,0.6,0.8,none")
     ap.add_argument("--max-recall-drop", type=float, default=0.005)
     ap.add_argument("--crop-size", type=int, default=224)
+    ap.add_argument("--context-pad", type=float, default=0.2,
+                    help="context margin added around each proposal before resizing")
     ap.add_argument("--val-only", action="store_true", help="dry run: stop after the val sweep")
     args = ap.parse_args()
 
@@ -89,7 +91,7 @@ def main() -> int:
         d = data / split
         t0 = time.time()
         rec = ts.build_records(args.yolo, args.cls, d / "images", d / "labels",
-                               conf=build_conf, crop_size=args.crop_size)
+                               conf=build_conf, crop_size=args.crop_size, pad=args.context_pad)
         return rec, (time.time() - t0) / max(len(rec), 1)
 
     # build at the lowest conf we will ever evaluate, so no band (e.g. arm A at

@@ -146,7 +146,8 @@ def main() -> None:
     vals = [load(PR / "yolo" / f"s_seed{s}" / "val.json") for s in (0, 1, 2)]
     m50 = [t["ultralytics_map"]["test"]["map50"] for t in tests]
     vm50 = [v["ultralytics_map"]["val"]["map50"] for v in vals]
-    ts_reps = [load(PR / "twostage" / f"s{s}" / "test_report.json") for s in (0, 1, 2)]
+    ts_reps = [load(PR / "twostage" / d / "test_report.json")
+               for d in ("s0", "s1_aligned", "s2_aligned")]
     audit = load(PR / "audit_v2_final" / "audit_summary.json")
     lf = load(PR / "label_fix_report.json")
     e1 = load(PR / "gradcam" / "e1_summary.json") if (PR / "gradcam" / "e1_summary.json").exists() else {}
@@ -158,6 +159,8 @@ def main() -> None:
     e1_zero = (sum(1 for r in csv.DictReader(open(e1_csv, encoding="utf-8"))
                    if float(r["energy_share"]) == 0.0) if e1_csv.exists() else "—")
     ab = [load(PR / "baseline_mnv3" / f"AB_224_seed{s}" / "metrics.json") for s in (0, 1, 2)]
+    lk = load(PR / "leaky_v1" / "comparison.json")
+    mse = load(PR / "analysis" / "mse_sensitivity.json")
     cfix = lf["arms"]["C_two_stage"]
     cfix_all = lf["arms"]
     c_p = [r["arms"]["C_two_stage"]["precision"] for r in ts_reps]
@@ -185,7 +188,7 @@ def main() -> None:
         "what was wrong with the original data, how the dataset was rebuilt and frozen, every "
         "model trained and every threshold chosen, every Grad-CAM experiment, every decision "
         "made (D001–D023) with its reason, and the complete audit trail of test-set touches "
-        "(#1–#14). All numbers are read from committed JSON/CSV produced by the scripts listed "
+        "(#1–#16). All numbers are read from committed JSON/CSV produced by the scripts listed "
         "in the reproduction section; nothing here is re-derived by hand.", BODY))
     s.append(Spacer(1, 4))
 
@@ -197,14 +200,22 @@ def main() -> None:
          f"{stats.mean(m50):.4f} ± {stats.stdev(m50):.4f}"],
         ["YOLOv8s (seeds 0/1/2)", "val mAP@50",
          f"{stats.mean(vm50):.4f} ± {stats.stdev(vm50):.4f}"],
-        ["Two-stage arm C (seed 0, post-fix)", "box precision / recall / FP/img",
-         f"{cfix['precision']['after']:.3f} / "
-         f"{cfix['recall']['after']:.3f} / "
-         f"{cfix['fp_per_image']['after']:.3f}"],
-        ["Two-stage arm C (3 seeds, pre-fix)", "box precision / recall / FP/img",
+        ["Two-stage arm C (seed 0, frozen labels)", "box precision / recall / FP/img",
+         f"{ts_reps[0]['arms']['C_two_stage']['precision']:.3f} / "
+         f"{ts_reps[0]['arms']['C_two_stage']['recall']:.3f} / "
+         f"{ts_reps[0]['arms']['C_two_stage']['fp_per_image']:.3f}"],
+        ["Two-stage arm C (3 seeds, detector-aligned)", "box precision / recall / FP/img",
          f"{stats.mean(c_p):.3f}±{stats.stdev(c_p):.3f} / "
          f"{stats.mean(c_r):.3f}±{stats.stdev(c_r):.3f} / "
          f"{stats.mean(c_fp):.3f}±{stats.stdev(c_fp):.3f}"],
+        ["Two-stage C − B (seeds 0/1/2)", "paired Δprecision (95% CI excludes 0?)",
+         f"{pb0['precision']['mean_diff']:+.3f} (yes) / "
+         f"{ts_reps[1]['paired_diff_C_minus_B']['precision']['mean_diff']:+.3f} (yes) / "
+         f"{ts_reps[2]['paired_diff_C_minus_B']['precision']['mean_diff']:+.3f} (no)"],
+        ["Label-corrected sensitivity (seed 0)", "box precision / recall / FP/img",
+         f"{cfix['precision']['after']:.3f} / "
+         f"{cfix['recall']['after']:.3f} / "
+         f"{cfix['fp_per_image']['after']:.3f}"],
         ["Two-stage C − B (seed 0)", "paired bootstrap Δprecision 95% CI",
          f"{pb0['precision']['mean_diff']:+.3f} "
          f"[{pb0['precision']['ci95'][0]:+.3f}, {pb0['precision']['ci95'][1]:+.3f}]  (excludes 0)"],
@@ -214,11 +225,15 @@ def main() -> None:
         ["Grad-CAM saliency", "energy enrichment (YOLO vs MNv3)",
          f"{e6.get('yolo_enrichment', {}).get('median', 0):.1f}× vs "
          f"{e6.get('mnv3_enrichment', {}).get('median', 0):.2f}×"],
-        ["Label audit", "objective test-box errors fixed", "2 (ds0_0801 tree trunk, ds0_0883 fence)"],
+        ["Label audit", "objective test-box errors documented",
+         "2 (ds0_0801 tree trunk, ds0_0883 fence; frozen split unchanged)"],
     ], col_w=[1.9 * inch, 2.4 * inch, 2.5 * inch]))
-    s.append(P("Arm C seed 0 is reported post-fix (two verified label errors removed, D023); "
-               "the 3-seed row is the frozen pre-fix evaluation because seeds 1–2 were not "
-               "recounted. Both are stated wherever they appear.", SMALL))
+    s.append(P("All headline numbers use the frozen dataset labels. Two test boxes are documented as "
+               "objectively wrong (D023) but are <i>not</i> deleted from the frozen split — the "
+               "label-corrected row is a sensitivity analysis, not the headline. The 3-seed row "
+               "re-runs the whole pipeline with each seed's own detector and classifier: seeds 0 "
+               "and 1 show a clear precision gain at matched recall, seed 2 does not, and the "
+               "mean±sd is reported precisely because that spread is real.", SMALL))
     s.append(PageBreak())
 
     # ================= 1. SCOPE =================
@@ -240,7 +255,7 @@ def main() -> None:
     s.append(P("1.1 Non-negotiable protocol (plan ground rules)", H2))
     for item in [
         "Thresholds are chosen on <b>val only</b>; each frozen configuration is evaluated once on test.",
-        "Every test-set touch is numbered and logged in RUN_LOG.md (touches #1–#14 used).",
+        "Every test-set touch is numbered and logged in RUN_LOG.md (touches #1–#18 used).",
         "Every paper number comes from a committed script file + JSON/CSV artifact.",
         "Original dataset, v1 runs, and Week-2 scripts are never modified.",
         "Labels are fixed only if objectively wrong, with before/after numbers reported (D023).",
@@ -426,9 +441,9 @@ def main() -> None:
     s.append(P("6. Phase 4 — MobileNetV3 image-level baseline", H1))
     s.append(P(
         "One shared constructor/preprocess (mnv3_shared.py, plan rule 10): "
-        "torchvision MobileNetV3-Small, 224×224 centre-crop + ImageNet norm, BCEWithLogits. "
+        "torchvision MobileNetV3-Large, 224×224 centre-crop + ImageNet norm, BCEWithLogits. "
         "Stage A: frozen features + linear head. Stage B (A+B): unfreeze features[13:] "
-        "(~2.3 M params) with lower LR. Extreme train imbalance (3887 pos : 20 neg) handled "
+        "(~2.2 M params) with lower LR. Extreme train imbalance (3887 pos : 20 neg) handled "
         "with per-sample class weights [97.7, 0.50] as per plan (no rebalancing beyond that). "
         "Ablations: resolution 224/448/640, batch 32/64, seeds 0/1/2. "
         "Thresholds: fixed 0.5 and recall-first (chosen on val).", BODY))
@@ -461,7 +476,7 @@ def main() -> None:
         "Stage 1: YOLOv8s (seed 0 for every seed run) proposes boxes; detections are cached at "
         "the lowest conf any arm evaluates (0.02), so all arms see the same candidate set. For "
         "the two-stage arm the proposal conf is 0.05. Stage 2: each box is expanded by 20% "
-        "context, resized to 224×224, and scored by a MobileNetV3-Small crop classifier "
+        "context, resized to 224×224, and scored by a MobileNetV3-Large crop classifier "
         "(sigmoid). A detection survives if its crop score ≥ τ, except detections at "
         "conf ≥ P, which pass without rechecking. Three arms are compared on test after "
         "thresholds are frozen from val: <b>Arm A</b> = YOLO alone at the Phase-3 deployment "
@@ -479,7 +494,7 @@ def main() -> None:
 
     s.append(P("7.3 Stage-2 training and ratio search", H2))
     s.append(P(
-        "phase5_train_stage2.py: MobileNetV3-Small, 30 epochs, patience 6, lr 2e-5 whole-net, "
+        "phase5_train_stage2.py: MobileNetV3-Large, 30 epochs, patience 6, lr 2e-5 whole-net, "
         "~2048 pos/epoch. Neg:pos ratio swept {1, 3} on seed 0: ratio 1 val AUC 0.998 F1 0.938; "
         "ratio 3 AUC 0.997 F1 0.918 → <b>ratio 1:1 chosen on val</b>. Seeds 1–2 retrained at "
         "ratio 1 (val F1 0.945 / 0.936). Shared constructor with the MNv3 baseline (rule 10).", BODY))
@@ -493,7 +508,7 @@ def main() -> None:
         "OP, reused for all stage-2 runs because all three runs use the seed-0 detector); "
         "Arm-B conf = 0.125, matched on val for seed 0. Arm C proposals use conf 0.05.", BODY))
 
-    s.append(P("7.5 Test results (touches #6/#7/#8) + paired bootstrap", H2))
+    s.append(P("7.5 Test results (touches #6/#7/#8/#18) + paired bootstrap", H2))
     ts_rows = [["seed", "arm", "conf/τ", "precision", "recall", "FP/img", "img recall"]]
     for s_i, rep in enumerate(ts_reps):
         for arm, key in (("A", "A_yolo_only_deploy"),
@@ -501,9 +516,8 @@ def main() -> None:
                          ("C", "C_two_stage")):
             a = rep["arms"][key]
             if key == "C_two_stage":
-                eff = rep.get("chosen_effective", {})
-                conf = (f"{eff.get('yolo_conf', '—')} / τ={a.get('cls_thr', '—')} / "
-                        f"P={a.get('protect_conf', '—')}")
+                conf = (f"conf {a.get('yolo_conf')} / τ={a.get('cls_thr')} / "
+                        f"P={a.get('protect_conf')}")
             else:
                 conf = str(rep.get("arm_a_conf" if key == "A_yolo_only_deploy" else "arm_b_conf", "—"))
             ts_rows.append([
@@ -514,10 +528,12 @@ def main() -> None:
     s.append(table(ts_rows, col_w=[0.5*inch, 0.5*inch, 1.55*inch, 1.0*inch, 0.95*inch,
                                    0.95*inch, 1.0*inch]))
     s.append(P(
-        "All three stage-2 runs use the <b>seed-0 detector</b> (each with its own crop-classifier "
-        "seed), so arm A/B rows are identical across the three blocks. Arm C values in this "
-        "table are the frozen pre-fix evaluation; the seed-0 post-fix recount is "
-        "P 0.894 / R 0.972 / FP-img 0.153 (all arms before/after in §10).", SMALL))
+        "Each block re-runs the full pipeline with <b>that seed's own detector and crop "
+        "classifier</b>, so arm A and B differ across blocks (the earlier draft incorrectly "
+        "reused the seed-0 detector for all three; corrected here). Arm C values are the frozen "
+        "evaluation; the seed-0 label-corrected sensitivity is P 0.894 / R 0.972 / FP-img 0.153 "
+        "(all arms before/after in §10). Seeds 0 and 1 gain about 0.13–0.14 precision over the "
+        "matched-recall baseline; seed 2 gains nothing (−0.037, CI spans 0).", SMALL))
     pb = ts_reps[0]["paired_diff_C_minus_B"]
     s.append(P(
         f"Seed-0 paired bootstrap (C − B, 2000 resamples of the 189 test images): "
@@ -531,9 +547,9 @@ def main() -> None:
         "Both precision and FP/img intervals exclude 0, satisfying the plan's claim rule.", BODY))
     cost = ts_reps[0].get("cost", {})
     s.append(P(
-        f"Cost (seed 0, PC GPU FP32): {cost.get('ms_per_image', '—')} ms/image end-to-end; "
-        f"{cost.get('crops_per_image_mean', '—')} crops/image mean "
-        f"(p95 {cost.get('crops_per_image_p95', '—')}).", BODY))
+        f"Cost (seed 0, PC GPU FP32): {cost.get('ms_per_image', 0):.1f} ms/image end-to-end; "
+        f"{cost.get('crops_per_image_mean', 0):.2f} crops/image mean "
+        f"(p95 {cost.get('crops_per_image_p95', 0):.1f}).", BODY))
 
     s.append(P("7.6 FP/img vs recall trade-off (plan §5.4 figure)", H2))
     s.extend(fig(PR / "figures" / "fp_recall_tradeoff.png", max_h=4.2 * inch))
@@ -659,9 +675,11 @@ def main() -> None:
         ])
     s.append(table(lf_rows, col_w=[1.3*inch, 1.4*inch, 1.6*inch, 1.3*inch, 1.2*inch]))
     s.append(P(
-        "No train-label fixes were found; the optional retrain was not run. Seeds 1–2 were not "
-        "recounted after the fix, so their headline numbers remain pre-fix (disclosed in §5 and "
-        "the headline table). Full artifact: paper_results/label_fix_report.json.", BODY))
+        "No train-label fixes were found, so no retrain was needed. The two wrong test boxes are "
+        "documented but are <i>not</i> removed from the frozen split; this table is therefore a "
+        "sensitivity analysis, and the headline numbers stay on the frozen labels. All three "
+        "stage-2 pipelines were re-run with their own detectors on those frozen labels. Full "
+        "artifact: paper_results/label_fix_report.json.", BODY))
     s.append(PageBreak())
 
     # ================= 11. TABLES =================
@@ -730,6 +748,12 @@ def main() -> None:
         ["12", "Phase 6", "E3 paste/remove counterfactuals on test", "Plan Phase 6"],
         ["13", "Phase 3", "YOLO seed-1 official eval", "D007"],
         ["14", "Phase 3", "YOLO seed-2 official eval", "D007"],
+        ["15", "extended", "Leaky-v1 official eval on v1 test (val-chosen conf)", "Extended budget"],
+        ["16", "extended", "Leaky-v1 + clean-v2 scoring on v2 test and 49-image clean subset",
+         "Frozen confs; contamination analysis"],
+        ["17", "extended", "YOLOv8n seed-0 official eval", "Size ablation"],
+        ["18", "extended", "Stage-2 seeds 1/2 re-run with their own detectors + re-scored",
+         "No selection; corrects the earlier shared-detector runs"],
         ["vis", "report", "Visualization-only val/test batch images (make_test_vis.py)", "No metric change"],
     ]
     s.append(table(touches, col_w=[0.5*inch, 0.8*inch, 3.6*inch, 1.9*inch]))
@@ -752,15 +776,20 @@ def main() -> None:
     # ================= 15. LIMITATIONS =================
     s.append(P("15. Limitations and what was NOT run", H1))
     for item in [
-        "Headline detector results are yolov8s; yolov8n/yolov8m size points are reported "
-        "separately as extended-budget runs.",
+        "Headline detector results are yolov8s; yolov8n and yolov8m size points are reported "
+        "separately as extended-budget runs (yolov8m in its own 30-hour block).",
         "Jetson / T7 edge latency (phases 7/8): dropped under approved scope; all numbers are PC GPU FP32.",
         "Optional retrain on fixed train labels: not run (no objective train-label errors found).",
         "Dataset itself is not in git (size); the v2 split manifest sha256 is committed.",
         "Jan LWIR files are colour RGB with marker pins (not thermal); kept with disclosure (D012/D016).",
         "Stage-2 crop images stay local (regenerable via phase5_build_crops.py).",
-        "Arm C ≈ test-tuned YOLO curve at matched recall; the val-matched gain is vs arm B. "
-        "The claim rule was pre-specified in the project plan, but no timestamped preregistration exists.",
+        "The two-stage gain is detector-dependent: seeds 0 and 1 gain 0.13–0.14 precision over "
+        "the matched-recall baseline, seed 2 gains nothing (ΔP −0.037, CI spans 0) and is worse "
+        "on FP/img. With each detector's own detector re-run, the effect is not a robust property "
+        "of the architecture.",
+        "A val-tuned single-stage threshold is competitive with (and under max-F2 better than) "
+        "the two-stage arm at moderate recall; the classifier's defensible role is confined to "
+        "the strict-recall regime (recall ≥ 0.96) and to terrain-nuisance rejection.",
         "MNv3 baseline is weak (7 negative test images → high seed variance); it is a floor, not a competitor.",
         "E3 paste-hold uses synthetic composites (feathered edges, scale mismatch) — not a perfect counterfactual.",
         "Single class (Landmine); no mine-type discrimination.",
@@ -788,7 +817,226 @@ def main() -> None:
         "are in this repository; the dataset itself is not redistributed (size). No license or "
         "terms-of-use artifact is included in this release.", BODY))
 
-    s.append(P("17. Reproduction", H1))
+    # ================= 17. EXTENDED EXPERIMENTS =================
+    s.append(P("17. Extended experiments (30 h budget)", H1))
+    s.append(P("17.1 Leaky-v1 vs clean-v2 — what the old split can and cannot measure", H2))
+    csub = lk["contamination"]
+    lk_rows = [["model", "eval set", "mAP50", "P", "R", "FP/img"]]
+    lk_rows.append([
+        "leaky v1", "v1 test (own split)", f"{lk['v1_test_own_split']['map50']:.4f}",
+        f"{lk['v1_test_own_split']['precision']:.3f}",
+        f"{lk['v1_test_own_split']['recall']:.3f}", "n/a (0 neg)"])
+    lk_rows.append([
+        "leaky v1", "v2 test, full (contaminated)",
+        f"{lk['full_v2_test']['leaky']['map50']:.4f}",
+        f"{lk['full_v2_test']['leaky']['precision']:.3f}",
+        f"{lk['full_v2_test']['leaky']['recall']:.3f}",
+        f"{lk['full_v2_test']['leaky']['fp_per_image']:.3f}"])
+    lk_rows.append([
+        "clean v2 seed 0", "v2 test, full",
+        f"{lk['full_v2_test']['clean_v2']['map50']:.4f}",
+        f"{lk['full_v2_test']['clean_v2']['precision']:.3f}",
+        f"{lk['full_v2_test']['clean_v2']['recall']:.3f}",
+        f"{lk['full_v2_test']['clean_v2']['fp_per_image']:.3f}"])
+    lk_rows.append([
+        "leaky v1", f"v2 test, clean subset (n={csub['clean_subset_images']})",
+        f"{lk['clean_subset']['leaky']['map50']:.4f}",
+        f"{lk['clean_subset']['leaky']['precision']:.3f}",
+        f"{lk['clean_subset']['leaky']['recall']:.3f}",
+        f"{lk['clean_subset']['leaky']['fp_per_image']:.3f}"])
+    lk_rows.append([
+        "clean v2 seed 0", f"v2 test, clean subset (n={csub['clean_subset_images']})",
+        f"{lk['clean_subset']['clean_v2']['map50']:.4f}",
+        f"{lk['clean_subset']['clean_v2']['precision']:.3f}",
+        f"{lk['clean_subset']['clean_v2']['recall']:.3f}",
+        f"{lk['clean_subset']['clean_v2']['fp_per_image']:.3f}"])
+    s.append(table(lk_rows, col_w=[1.05*inch, 2.0*inch, 0.7*inch, 0.6*inch, 0.6*inch, 0.75*inch]))
+    s.append(P(
+        f"The leaky model was trained on v1 train and its checkpoint/conf were chosen on v1 val. "
+        f"<b>{csub['groups_touching_v1_train']} of {csub['v2_test_images']} v2 test images "
+        f"({100*csub['fraction']:.1f}%) share a v2 group with an image it trained on</b>, so its "
+        f"full-v2 score (0.9940) is not a clean generalization number — it is higher than the "
+        f"clean-trained model's 0.9741 precisely because of that contamination. On the "
+        f"{csub['clean_subset_images']} contamination-free images the two models tie at "
+        f"{lk['clean_subset']['leaky']['map50']:.4f} vs {lk['clean_subset']['clean_v2']['map50']:.4f} "
+        f"mAP50 (mAP50-95 {lk['clean_subset']['leaky']['map50_95']:.4f} vs "
+        f"{lk['clean_subset']['clean_v2']['map50_95']:.4f}; {csub['clean_subset_instances']} "
+        f"instances, low power). Operating confs differ (0.065 vs 0.02), so P/FP columns are not "
+        f"threshold-matched; mAP is the fair comparison. Reading: the old split did not inflate "
+        f"the model's capability — it made evaluation invalid, model selection leaky, and "
+        f"false-positive behaviour unmeasurable (v1 test has zero negatives). That is why the v2 "
+        f"re-split required retraining.", BODY))
+
+    s.append(P("17.2 MSE threshold sensitivity of the de-duplication filter", H2))
+    mse_rows = [["MSE ≤", "flagged", "of 30 leaks captured", "same-scene survivors flagged"]]
+    for r in mse["sweep"]:
+        mse_rows.append([str(r["mse_threshold"]), str(r["flagged_total"]),
+                         str(r["true_leaks_captured"]), str(r["survivors_flagged"])])
+    s.append(table(mse_rows, col_w=[0.9*inch, 1.0*inch, 2.0*inch, 2.4*inch]))
+    s.append(P(
+        f"All 30 removed leaks have MSE ≤ {mse['max_mse_among_removed']} and the nearest "
+        f"surviving candidate is {mse['nearest_surviving_mse']} — the frozen 900 cut sits in a "
+        f"{100*(mse['margin_ratio_900_to_nearest_survivor']-1):.1f}% gap. Lowering to 500 would "
+        f"capture only 25/30 leaks; raising to 1500 would additionally flag 35 surviving "
+        f"candidates that are same-scene different frames, not duplicates. The choice is "
+        f"documented in paper_results/analysis/mse_sensitivity.md.", BODY))
+
+    # ---------- 17.3 size points ----------
+    s.append(P("17.3 Detector size points: mAP50 saturates, the operating point does not", H2))
+    st = load(PR / "analysis" / "stats.json")
+    size_runs = [("YOLOv8s seed 0", "s_seed0"), ("YOLOv8s seed 1", "s_seed1"),
+                 ("YOLOv8s seed 2", "s_seed2"), ("YOLOv8n seed 0", "n_seed0"),
+                 ("YOLOv8m seed 0", "m_seed0")]
+    sz_rows = [["run", "mAP50", "mAP50-95", "OP conf", "P @ OP", "R @ OP", "FP/img @ OP"]]
+    for label, tag in size_runs:
+        p = PR / "yolo" / tag / "test.json"
+        if not p.exists():
+            continue
+        d = load(p)
+        o = d["ops"]["op97_primary"]
+        u = d["ultralytics_map"]["test"]
+        sz_rows.append([label, f"{u['map50']:.4f}", f"{u['map50_95']:.4f}",
+                        f"{o['conf']:.3f}", f"{o['precision']:.3f}", f"{o['recall']:.3f}",
+                        f"{o['fp_per_image']:.2f}"])
+    s.append(table(sz_rows, col_w=[1.35*inch, 0.85*inch, 1.0*inch, 0.8*inch,
+                                   0.8*inch, 0.8*inch, 0.95*inch]))
+    s.append(P(
+        "The recall-first operating point is the one that matters for a tripwire: it is the "
+        "strictest YOLO confidence that still reaches 97% recall, chosen on val. YOLOv8n reaches "
+        "essentially the same mAP50 as the small model but needs conf 0.005 to hit that recall, "
+        "which leaves 6.5 false detections per test image (vs 1.75 for s seed 0 and 0.15 for the "
+        "two-stage arm). mAP50 at conf 0.001 therefore hides a large operational difference; "
+        "every model-size comparison in this report is made at its own val-chosen operating "
+        "point as well as at mAP. The medium model is the only size point that is not free: it "
+        "is trained in its own 30-hour block.", BODY))
+
+    # ---------- 17.4 statistics ----------
+    s.append(P("17.4 Statistical robustness and the honest size of the two-stage gain", H2))
+    s.append(P(
+        "All intervals below resample the 189 test images (B = 2000) because the unit of "
+        "deployment is an image, not a box. Box-level intervals are narrower and would "
+        "overstate confidence.", BODY))
+    ci_rows = [["run", "conf", "P", "R", "FP/img", "image recall [95% CI]"]]
+    for k in ("seed0", "seed1", "seed2"):
+        if k not in st["yolo"]:
+            continue
+        v = st["yolo"][k]; m = v["metrics"]
+        ci_rows.append([k, f"{v['conf']:.3f}", f"{m['precision']:.3f}", f"{m['recall']:.3f}",
+                        f"{m['fp_per_image']:.3f}",
+                        f"{m['img_recall']:.3f} [{m['img_recall_ci'][0]:.3f}, "
+                        f"{m['img_recall_ci'][1]:.3f}]"])
+    s.append(table(ci_rows, col_w=[0.85*inch, 0.7*inch, 0.65*inch, 0.65*inch,
+                                   0.8*inch, 2.7*inch]))
+    seed0 = st["yolo"].get("seed0", {})
+    if seed0.get("cluster_bootstrap"):
+        cb = seed0["cluster_bootstrap"]
+        s.append(P(
+            "Source-cluster bootstrap (three test sources, resampled as clusters) is much wider: "
+            f"precision {cb['precision_ci'][0]:.2f}–{cb['precision_ci'][1]:.2f}, FP/img "
+            f"{cb['fp_per_image_ci'][0]:.2f}–{cb['fp_per_image_ci'][1]:.1f}. "
+            "The test set is 151 ds0, 28 ds1 and 10 Jan_lwir images, so its source mix — not "
+            "model variance — dominates the precision estimate. Leave-one-source-out confirms "
+            "it: removing ds0 gives precision "
+            f"{seed0['without_ds0']['precision']:.3f} at {seed0['without_ds0']['fp_per_image']:.2f} "
+            "FP/img, while removing Jan_lwir gives "
+            f"{seed0['without_Jan_lwir']['precision']:.3f} at "
+            f"{seed0['without_Jan_lwir']['fp_per_image']:.2f}. Any single-number test precision "
+            "should be read with that spread in mind.", BODY))
+
+    s.append(P("Operating-policy rules, all chosen on val and applied unchanged to test", H3))
+    tr = st["stage2"].get("seed0", {})
+    if tr:
+        rule_rows = [["policy", "param", "val P", "val R", "test P", "test R", "test FP/img"]]
+        for r in tr["threshold_rules"]:
+            t = r["test"]
+            name = r["rule"]
+            if r["stage"].endswith("(YOLO only)"):
+                name = "YOLO-only: " + name
+            rule_rows.append([name, f"{r['param']:.3f}", f"{r['val_p']:.3f}",
+                              f"{r['val_r']:.3f}", f"{t['precision']:.3f}",
+                              f"{t['recall']:.3f}", f"{t['fp_per_image']:.3f}"])
+        s.append(table(rule_rows, col_w=[2.35*inch, 0.65*inch, 0.65*inch, 0.65*inch,
+                                         0.65*inch, 0.65*inch, 0.9*inch]))
+        s.append(P(
+            "Seed 0, the same checkpoint the headline uses. Three readings matter. First, the "
+            "recall-protection rule is what produces the headline: with the classifier allowed to "
+            "veto any proposal (no protection) precision falls to 0.654 at the same recall, and "
+            "protection alone (classifier off, conf ≥ 0.4) already gives P 0.953 / R 0.957 / "
+            "0.063 FP/img. Second, at matched FP budget (0.225 conf) YOLO-only gives "
+            "P 0.854 / R 0.968 / 0.222 FP/img versus 0.894 / 0.964 / 0.153 for the two-stage "
+            "arm: a real but modest gain in the high-recall regime. Third, if the operating rule "
+            "is max-F2 instead of recall-safe, a single-stage threshold at conf 0.52 wins "
+            "(P 0.976 / R 0.949 / 0.032). The two-stage arm is therefore justified by the "
+            "strict-recall regime, not as a general-purpose improvement, and the paper must say "
+            "so.", BODY))
+
+    s.append(P("Seed dependence of the primary rule", H3))
+    seed_rows = [["seed", "C P", "C R", "C FP/img", "B P", "B FP/img", "ΔP (C − B) [95% CI]"]]
+    for s_i in ("seed0", "seed1", "seed2"):
+        v = st["stage2"].get(s_i)
+        if not v:
+            continue
+        c, b = v["arm_c_primary"], v["arm_b"]
+        d = (v.get("paired_C_minus_B") or {}).get("precision", {})
+        seed_rows.append([s_i.replace("seed", ""), f"{c['precision']:.3f}", f"{c['recall']:.3f}",
+                          f"{c['fp_per_image']:.3f}", f"{b['precision']:.3f}",
+                          f"{b['fp_per_image']:.3f}",
+                          (f"{d['mean_diff']:+.3f} [{d['ci95'][0]:+.3f}, {d['ci95'][1]:+.3f}]"
+                           if d else "-")])
+    s.append(table(seed_rows, col_w=[0.5*inch, 0.65*inch, 0.65*inch, 0.8*inch,
+                                     0.65*inch, 0.8*inch, 1.85*inch]))
+    s.append(P(
+        "Each seed's detector is different, so B (YOLO-only, threshold chosen on val to match C's "
+        "recall) is the fair per-seed baseline. Seeds 0 and 1 gain 0.13–0.14 precision with a "
+        "paired interval excluding zero; seed 2 gains nothing (ΔP −0.037, CI spans 0) and is "
+        "actually worse than its own B on FP/img (0.497 vs 0.402). The mean ΔP is +0.080 but "
+        "the across-seed sd is 0.104, so the effect is best described as detector-dependent "
+        "rather than a robust property of the two-stage design.", BODY))
+
+    s.append(P("Stage-2 ablations (paired against the frozen baseline on the same images)", H2))
+    abl = st["ablations"]
+    ab_rows = [["variant", "pad", "crop", "hardneg", "cls thr", "P", "R", "FP/img",
+                "ΔP vs base [95% CI]"]]
+    order = ["baseline_pad02_224_hardneg", "pad0", "pad04", "crop160", "crop320", "nohardneg"]
+    for k in order:
+        v = abl.get(k)
+        if not v:
+            continue
+        m, meta = v["arm_c"], v["meta"]
+        d = v.get("paired_vs_baseline", {}).get("precision")
+        dp = ("reference" if k == "baseline_pad02_224_hardneg"
+              else (f"{d['mean_diff']:+.3f} [{d['ci95'][0]:+.3f}, {d['ci95'][1]:+.3f}]" if d else "-"))
+        ab_rows.append([k.replace("_pad02_224_hardneg", ""), f"{meta['pad']:.1f}",
+                        str(meta["crop_size"]), str(meta["hardneg"]), f"{v['cls_thr']:.2f}",
+                        f"{m['precision']:.3f}", f"{m['recall']:.3f}",
+                        f"{m['fp_per_image']:.3f}", dp])
+    s.append(table(ab_rows, col_w=[1.55*inch, 0.5*inch, 0.5*inch, 0.65*inch, 0.6*inch,
+                                   0.55*inch, 0.55*inch, 0.7*inch, 1.6*inch]))
+    s.append(P(
+        "Removing hard-negative mining is the only clearly harmful change (ΔP −0.056, CI "
+        "[−0.084, −0.028]): the classifier is mostly a terrain-nuisance rejector, which is "
+        "consistent with the Grad-CAM dependence result. Both smaller and larger context hurt "
+        "slightly (pad 0.0 and 0.4, ΔP −0.027 and −0.025), so the 20% margin is a shallow but "
+        "real optimum. Crop resolution is flat within noise: 160 is nominally better but its "
+        "interval touches zero (+0.017, [0.000, 0.036]) and 320 is worse (−0.025). No claim of "
+        "a resolution effect is warranted.", BODY))
+
+    s.append(P("Class balance the test set does not show", H2))
+    shift_rows = [["split/source", "images", "boxes", "boxes/img", "empty"]]
+    for k, d in st["shift"].items():
+        shift_rows.append([k, str(d["images"]), str(d["boxes"]),
+                           f"{d['boxes_per_image']:.2f}", f"{d['empty_rate']:.1%}"])
+    s.append(table(shift_rows, col_w=[1.5*inch, 0.75*inch, 0.75*inch, 0.9*inch, 0.75*inch]))
+    s.append(P(
+        "Train is dominated by May_lwir (776 images, 9.9 mines per image), which contributes no "
+        "test images at all; the test set is 80% ds0 with about one mine per image and 2% empty "
+        "images. Valid mixes 42 Jan_lwir images (6.8 mines each) with 138 ds0 images, so the val "
+        "operating point is chosen on a materially different source mix from test. This is a "
+        "dataset limitation, not something a threshold rule can fix, and it is the main reason "
+        "the precision estimates move so much under leave-one-source-out.", BODY))
+    s.append(PageBreak())
+
+    s.append(P("18. Reproduction", H1))
     s.append(P("Every artifact is regenerable from committed scripts:", BODY))
     for cmd in [
         "python scripts/phase1_audit.py --dataset landmine_combined_v2 --out paper_results/audit_v2_final",

@@ -1,0 +1,83 @@
+{
+  "stage1": {
+    "tp": 408,
+    "fp": 995,
+    "fn": 11,
+    "precision": 0.2908054169636493,
+    "recall": 0.9737470167064439,
+    "f2": 0.662552776875609,
+    "fp_per_image": 5.497237569060774,
+    "img_tp": 173,
+    "img_fp": 2,
+    "img_fn": 1,
+    "img_tn": 5,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9885714285714285,
+    "img_accuracy": 0.9834254143646409
+  },
+  "chosen": {
+    "P": 0.4,
+    "tau": 0.22,
+    "recall": 0.9689737470167065,
+    "precision": 0.5370370370370371,
+    "fp_per_image": 1.9337016574585635,
+    "img_recall": 0.9885057471264368,
+    "recall_drop": 0.004773269689737458
+  },
+  "chosen_effective": {
+    "yolo_conf": 0.05,
+    "cls_thr": 0.22,
+    "protect_conf": 0.4
+  },
+  "arm_a_conf": 0.21,
+  "arm_b_conf": 0.21,
+  "ms_per_image": 42.431391405137205,
+  "val_at_chosen": {
+    "tp": 406,
+    "fp": 350,
+    "fn": 13,
+    "precision": 0.5370370370370371,
+    "recall": 0.9689737470167065,
+    "f2": 0.8347039473684212,
+    "fp_per_image": 1.9337016574585635,
+    "img_tp": 172,
+    "img_fp": 0,
+    "img_fn": 2,
+    "img_tn": 7,
+    "img_recall": 0.9885057471264368,
+    "img_precision": 1.0,
+    "img_accuracy": 0.988950276243094
+  },
+  "val_at_arm_a": {
+    "tp": 407,
+    "fp": 253,
+    "fn": 12,
+    "precision": 0.6166666666666667,
+    "recall": 0.9713603818615751,
+    "f2": 0.8711472602739727,
+    "fp_per_image": 1.3977900552486189,
+    "img_tp": 172,
+    "img_fp": 0,
+    "img_fn": 2,
+    "img_tn": 7,
+    "img_recall": 0.9885057471264368,
+    "img_precision": 1.0,
+    "img_accuracy": 0.988950276243094
+  },
+  "val_at_arm_b": {
+    "tp": 407,
+    "fp": 253,
+    "fn": 12,
+    "precision": 0.6166666666666667,
+    "recall": 0.9713603818615751,
+    "f2": 0.8711472602739727,
+    "fp_per_image": 1.3977900552486189,
+    "img_tp": 172,
+    "img_fp": 0,
+    "img_fn": 2,
+    "img_tn": 7,
+    "img_recall": 0.9885057471264368,
+    "img_precision": 1.0,
+    "img_accuracy": 0.988950276243094
+  }
+}

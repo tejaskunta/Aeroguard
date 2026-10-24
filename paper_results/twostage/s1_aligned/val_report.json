@@ -1,0 +1,83 @@
+{
+  "stage1": {
+    "tp": 404,
+    "fp": 340,
+    "fn": 15,
+    "precision": 0.543010752688172,
+    "recall": 0.964200477326969,
+    "f2": 0.8347107438016529,
+    "fp_per_image": 1.8784530386740332,
+    "img_tp": 173,
+    "img_fp": 1,
+    "img_fn": 1,
+    "img_tn": 6,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9942528735632183,
+    "img_accuracy": 0.988950276243094
+  },
+  "chosen": {
+    "P": 0.4,
+    "tau": 0.23,
+    "recall": 0.9594272076372315,
+    "precision": 0.78515625,
+    "fp_per_image": 0.6077348066298343,
+    "img_recall": 0.9885057471264368,
+    "recall_drop": 0.004773269689737458
+  },
+  "chosen_effective": {
+    "yolo_conf": 0.05,
+    "cls_thr": 0.23,
+    "protect_conf": 0.4
+  },
+  "arm_a_conf": 0.01,
+  "arm_b_conf": 0.06,
+  "ms_per_image": 49.321291855027006,
+  "val_at_chosen": {
+    "tp": 402,
+    "fp": 110,
+    "fn": 17,
+    "precision": 0.78515625,
+    "recall": 0.9594272076372315,
+    "f2": 0.9186471663619744,
+    "fp_per_image": 0.6077348066298343,
+    "img_tp": 172,
+    "img_fp": 0,
+    "img_fn": 2,
+    "img_tn": 7,
+    "img_recall": 0.9885057471264368,
+    "img_precision": 1.0,
+    "img_accuracy": 0.988950276243094
+  },
+  "val_at_arm_a": {
+    "tp": 407,
+    "fp": 1161,
+    "fn": 12,
+    "precision": 0.25956632653061223,
+    "recall": 0.9713603818615751,
+    "f2": 0.62731196054254,
+    "fp_per_image": 6.414364640883978,
+    "img_tp": 173,
+    "img_fp": 3,
+    "img_fn": 1,
+    "img_tn": 4,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9829545454545454,
+    "img_accuracy": 0.9779005524861878
+  },
+  "val_at_arm_b": {
+    "tp": 402,
+    "fp": 285,
+    "fn": 17,
+    "precision": 0.5851528384279476,
+    "recall": 0.9594272076372315,
+    "f2": 0.8506136267456622,
+    "fp_per_image": 1.574585635359116,
+    "img_tp": 173,
+    "img_fp": 1,
+    "img_fn": 1,
+    "img_tn": 6,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9942528735632183,
+    "img_accuracy": 0.988950276243094
+  }
+}

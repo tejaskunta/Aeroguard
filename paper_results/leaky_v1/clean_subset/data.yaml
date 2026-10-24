@@ -1,0 +1,6 @@
+path: C:/Users/Delta/Downloads/SafeMineAI-main/paper_results/leaky_v1/clean_subset
+train: images
+val: images
+nc: 1
+names:
+- Landmine

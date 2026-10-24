@@ -1,0 +1,8 @@
+{
+  "variant": "nohardneg",
+  "pad": 0.2,
+  "crop_size": 224,
+  "hardneg": false,
+  "yolo": "C:\\Users\\Delta\\Downloads\\SafeMineAI-main\\runs\\detect\\runs\\detect\\landmine_yolov8s_75ep_s0_v2\\weights\\last.pt",
+  "fp_miner": null
+}

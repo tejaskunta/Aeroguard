@@ -80,7 +80,7 @@ def make_figures():
         (0.2, 2.6, 1.7, 1.1, "Frozen split v2\n3907/181/189"),
         (2.3, 2.6, 1.8, 1.1, "YOLOv8s stage 1\nseed 0; dets @conf>=0.02"),
         (4.6, 3.1, 2.0, 0.9, "conf >= P (0.4)\nprotected (no recheck)"),
-        (4.6, 1.7, 2.0, 1.1, "0.05 <= conf < P\nMNv3-Small crop clf"),
+        (4.6, 1.7, 2.0, 1.1, "0.05 <= conf < P\nMNv3-Large crop clf"),
         (7.1, 2.6, 1.9, 1.1, "combine\narm C"),
         (9.4, 2.6, 1.4, 1.1, "detections\n(arm A/B/C)"),
     ]
