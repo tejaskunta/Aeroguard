@@ -126,7 +126,7 @@ def mine_fp_squares(yolo_weights, img_dir: Path, label_dir: Path, rng, conf=0.05
 
 
 def build_split(split_root: Path, out_root: Path, rng: random.Random,
-                yolo_fp=None, imgsz=224, target_neg_per_pos=1.0):
+                yolo_fp=None, imgsz=224, target_neg_per_pos=1.0, pad=0.2):
     img_dir = split_root / "images"
     lbl_dir = split_root / "labels"
     rows = []
@@ -143,7 +143,7 @@ def build_split(split_root: Path, out_root: Path, rng: random.Random,
         boxes = read_boxes(lbl_dir / (p.name.rsplit(".", 1)[0] + ".txt"), w, h)
         loaded[p] = (img, boxes)
         for bi, b in enumerate(boxes):
-            sq = clip_square(jittered_square(b, rng), w, h)
+            sq = clip_square(jittered_square(b, rng, pad=pad), w, h)
             if sq is None:
                 continue
             side = sq[2] - sq[0]
@@ -183,7 +183,7 @@ def build_split(split_root: Path, out_root: Path, rng: random.Random,
                 n_neg_rand += 1
 
     if yolo_fp is not None:
-        fpm = mine_fp_squares(yolo_fp, img_dir, lbl_dir, rng)
+        fpm = mine_fp_squares(yolo_fp, img_dir, lbl_dir, rng, pad=pad)
         for p, sqs in fpm.items():
             img = loaded[p][0] if p in loaded else Image.open(p).convert("RGB")
             for j, sq in enumerate(sqs[:4]):
@@ -208,6 +208,8 @@ def main() -> int:
                          "omit to skip FP negatives")
     ap.add_argument("--imgsz", type=int, default=224)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--pad", type=float, default=0.2,
+                    help="context padding as fraction of box side (default 0.2)")
     args = ap.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8")
@@ -219,7 +221,7 @@ def main() -> int:
     all_rows = []
     for split, fp in (("train", args.yolo), ("valid", None)):
         rows, stats = build_split(root / split, out / split, rng,
-                                  yolo_fp=fp, imgsz=args.imgsz)
+                                  yolo_fp=fp, imgsz=args.imgsz, pad=args.pad)
         print(split, stats, flush=True)
         all_rows += rows
         (out / split / "stats.json").write_text(json.dumps(stats, indent=2),

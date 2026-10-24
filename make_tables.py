@@ -78,9 +78,9 @@ def make_figures():
     ax.set_xlim(0, 11); ax.set_ylim(0, 4.2); ax.axis("off")
     boxes = [
         (0.2, 2.6, 1.7, 1.1, "Frozen split v2\n3907/181/189"),
-        (2.3, 2.6, 1.8, 1.1, "YOLOv8s stage 1\nseed 0, conf>=0.02"),
-        (4.6, 3.1, 2.0, 0.9, "conf >= 0.4\nprotected (no recheck)"),
-        (4.6, 1.7, 2.0, 1.1, "0.05 <= conf < 0.4\nMNv3-L crop clf"),
+        (2.3, 2.6, 1.8, 1.1, "YOLOv8s stage 1\nseed 0; dets @conf>=0.02"),
+        (4.6, 3.1, 2.0, 0.9, "conf >= P (0.4)\nprotected (no recheck)"),
+        (4.6, 1.7, 2.0, 1.1, "0.05 <= conf < P\nMNv3-Small crop clf"),
         (7.1, 2.6, 1.9, 1.1, "combine\narm C"),
         (9.4, 2.6, 1.4, 1.1, "detections\n(arm A/B/C)"),
     ]
@@ -93,8 +93,9 @@ def make_figures():
                  ((6.6, 2.25), (7.1, 3.15)), ((9.0, 3.15), (9.4, 3.15))]:
         ax.add_patch(FancyArrowPatch(a, b, arrowstyle="-|>", mutation_scale=12,
                                      color="#555555", lw=1.2))
-    ax.text(5.6, 1.15, "crop = box + 20% context, 224x224, sigmoid score; "
-            "tau and P chosen on val only", ha="center", fontsize=8, color="#444444")
+    ax.text(5.6, 1.15, "arm C proposals conf 0.05; crop = box + 20% context, 224x224, sigmoid "
+            "score; all arms scored on one det cache (conf>=0.02); tau and P chosen on val only",
+            ha="center", fontsize=7.5, color="#444444")
     fig.tight_layout(); fig.savefig(figd / "pipeline.png", dpi=160); plt.close(fig)
 
     # --- PR / operating curves

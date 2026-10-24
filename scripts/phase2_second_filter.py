@@ -43,7 +43,13 @@ def main() -> int:
     ap.add_argument("--mse", type=float, default=80.0,
                     help="True leak if downsampled RGB MSE <= this (tune on samples)")
     ap.add_argument("--apply", action="store_true", help="Remove flagged eval images from v2")
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help="Output dir for CSVs (use a scratch dir for sensitivity runs)")
+    ap.add_argument("--count-only", action="store_true",
+                    help="Print counts only; write no CSV (safe for sensitivity sweeps)")
     args = ap.parse_args()
+    out_dir = args.out
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     name_to_path = {}
     for split in ("train", "valid", "test"):
@@ -85,14 +91,14 @@ def main() -> int:
     for r in rows_sorted[-5:]:
         print(f"  mse={r['mse32']:7.1f} ham={r['hamming']} {r['query_name'][:50]} <-> {r['train_name'][:50]}")
 
-    out_csv = OUT / "second_method_filter.csv"
-    OUT.mkdir(parents=True, exist_ok=True)
-    with open(out_csv, "w", newline="", encoding="utf-8") as f:
-        cols = ["query_split", "query_name", "train_name", "hamming", "mse32", "true_leak"]
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        w.writerows(sorted(rows, key=lambda r: r["mse32"]))
-    print(f"wrote {out_csv}")
+    if not args.count_only:
+        out_csv = out_dir / "second_method_filter.csv"
+        with open(out_csv, "w", newline="", encoding="utf-8") as f:
+            cols = ["query_split", "query_name", "train_name", "hamming", "mse32", "true_leak"]
+            w = csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            w.writerows(sorted(rows, key=lambda r: r["mse32"]))
+        print(f"wrote {out_csv}")
 
     if not args.apply:
         print("Dry run only. Re-run with --apply to remove true-leak eval images.")
@@ -112,14 +118,14 @@ def main() -> int:
                     lbl.unlink()
                 removed.append((split, name))
                 break
-    with open(OUT / "removed_leaks.csv", "w", newline="", encoding="utf-8") as f:
+    with open(out_dir / "removed_leaks.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["split", "name"])
         w.writerows(removed)
     for split in ("train", "valid", "test"):
         n = len(list((args.v2 / split / "images").iterdir()))
         print(f"  {split}: {n} images remain")
-    print(f"removed {len(removed)} -> {OUT / 'removed_leaks.csv'}")
+    print(f"removed {len(removed)} -> {out_dir / 'removed_leaks.csv'}")
     return 0
 
 

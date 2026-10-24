@@ -6,6 +6,7 @@ All numbers read from committed JSON/CSV/MD (no recompute). Figures embedded.
 from __future__ import annotations
 
 import json
+import csv
 import statistics as stats
 import sys
 from datetime import date
@@ -153,7 +154,16 @@ def main() -> None:
     e3 = load(PR / "gradcam" / "e3_summary.json") if (PR / "gradcam" / "e3_summary.json").exists() else {}
     e6 = load(PR / "gradcam" / "e6_summary.json") if (PR / "gradcam" / "e6_summary.json").exists() else {}
     e5 = load(PR / "gradcam" / "e5_summary.json") if (PR / "gradcam" / "e5_summary.json").exists() else {}
+    e1_csv = PR / "gradcam" / "e1_energy.csv"
+    e1_zero = (sum(1 for r in csv.DictReader(open(e1_csv, encoding="utf-8"))
+                   if float(r["energy_share"]) == 0.0) if e1_csv.exists() else "—")
     ab = [load(PR / "baseline_mnv3" / f"AB_224_seed{s}" / "metrics.json") for s in (0, 1, 2)]
+    cfix = lf["arms"]["C_two_stage"]
+    cfix_all = lf["arms"]
+    c_p = [r["arms"]["C_two_stage"]["precision"] for r in ts_reps]
+    c_r = [r["arms"]["C_two_stage"]["recall"] for r in ts_reps]
+    c_fp = [r["arms"]["C_two_stage"]["fp_per_image"] for r in ts_reps]
+    pb0 = ts_reps[0]["paired_diff_C_minus_B"]
 
     doc = SimpleDocTemplate(
         str(OUT), pagesize=A4,
@@ -187,19 +197,28 @@ def main() -> None:
          f"{stats.mean(m50):.4f} ± {stats.stdev(m50):.4f}"],
         ["YOLOv8s (seeds 0/1/2)", "val mAP@50",
          f"{stats.mean(vm50):.4f} ± {stats.stdev(vm50):.4f}"],
-        ["Two-stage arm C (seed 0)", "box precision / recall / FP/img",
-         f"{ts_reps[0]['arms']['C_two_stage']['precision']:.3f} / "
-         f"{ts_reps[0]['arms']['C_two_stage']['recall']:.3f} / "
-         f"{ts_reps[0]['arms']['C_two_stage']['fp_per_image']:.3f}"],
+        ["Two-stage arm C (seed 0, post-fix)", "box precision / recall / FP/img",
+         f"{cfix['precision']['after']:.3f} / "
+         f"{cfix['recall']['after']:.3f} / "
+         f"{cfix['fp_per_image']['after']:.3f}"],
+        ["Two-stage arm C (3 seeds, pre-fix)", "box precision / recall / FP/img",
+         f"{stats.mean(c_p):.3f}±{stats.stdev(c_p):.3f} / "
+         f"{stats.mean(c_r):.3f}±{stats.stdev(c_r):.3f} / "
+         f"{stats.mean(c_fp):.3f}±{stats.stdev(c_fp):.3f}"],
         ["Two-stage C − B (seed 0)", "paired bootstrap Δprecision 95% CI",
-         "+0.128 [0.065, 0.186]  (excludes 0)"],
+         f"{pb0['precision']['mean_diff']:+.3f} "
+         f"[{pb0['precision']['ci95'][0]:+.3f}, {pb0['precision']['ci95'][1]:+.3f}]  (excludes 0)"],
         ["Two-stage C − B (seed 0)", "paired bootstrap ΔFP/img 95% CI",
-         "−0.253 [−0.460, −0.095]  (excludes 0)"],
+         f"{pb0['fp_per_image']['mean_diff']:+.3f} "
+         f"[{pb0['fp_per_image']['ci95'][0]:+.3f}, {pb0['fp_per_image']['ci95'][1]:+.3f}]  (excludes 0)"],
         ["Grad-CAM saliency", "energy enrichment (YOLO vs MNv3)",
-         f"{e6.get('yolo_median_enrichment', '—')}× vs "
-         f"{e6.get('baseline_median_enrichment', '—')}×"],
+         f"{e6.get('yolo_enrichment', {}).get('median', 0):.1f}× vs "
+         f"{e6.get('mnv3_enrichment', {}).get('median', 0):.2f}×"],
         ["Label audit", "objective test-box errors fixed", "2 (ds0_0801 tree trunk, ds0_0883 fence)"],
     ], col_w=[1.9 * inch, 2.4 * inch, 2.5 * inch]))
+    s.append(P("Arm C seed 0 is reported post-fix (two verified label errors removed, D023); "
+               "the 3-seed row is the frozen pre-fix evaluation because seeds 1–2 were not "
+               "recounted. Both are stated wherever they appear.", SMALL))
     s.append(PageBreak())
 
     # ================= 1. SCOPE =================
@@ -208,18 +227,19 @@ def main() -> None:
         "<b>Objective.</b> Re-train and re-evaluate the landmine detector under a leakage-free "
         "split, with a MobileNetV3 image-level baseline, a two-stage YOLO→crop-classifier "
         "pipeline, and Grad-CAM interpretability experiments — journal-complete numbers only, "
-        "no Jetson/edge deployment (phases 7/8 dropped under the approved ~25 h budget).", BODY))
+        "no Jetson/edge deployment (phases 7/8 dropped under the approved ~30 h budget).", BODY))
     s.append(P(
         "<b>Physical scope note.</b> An RGB (or near-IR labelled-as-LWIR) camera physically cannot "
         "see buried objects. This model detects <b>visible landmine-like objects and surface "
         "indicators only</b>. That is a design constraint, not a gap.", BODY))
     s.append(P(
-        "<b>Approved reduced budget.</b> yolov8s only (no n/m size sweep); seeds 0/1/2 for YOLO "
-        "and MNv3; two-stage and Grad-CAM on seed 0 primary with seed replication where cheap; "
-        "optional retrain on fixed train labels skipped (none found); edge phases dropped.", BODY))
+        "<b>Approved budget.</b> yolov8s primary (3 seeds); yolov8n/yolov8m size points added "
+        "in the extended 30 h budget; seeds 0/1/2 for YOLO and MNv3; two-stage and Grad-CAM on "
+        "seed 0 primary with seed replication where cheap; optional retrain on fixed train "
+        "labels skipped (none found); edge phases dropped.", BODY))
     s.append(P("1.1 Non-negotiable protocol (plan ground rules)", H2))
     for item in [
-        "Thresholds are chosen on <b>val only</b>; test is evaluated once under the frozen protocol.",
+        "Thresholds are chosen on <b>val only</b>; each frozen configuration is evaluated once on test.",
         "Every test-set touch is numbered and logged in RUN_LOG.md (touches #1–#14 used).",
         "Every paper number comes from a committed script file + JSON/CSV artifact.",
         "Original dataset, v1 runs, and Week-2 scripts are never modified.",
@@ -270,9 +290,13 @@ def main() -> None:
         "A second-method filter (phase2_second_filter.py) then flags remaining eval images with "
         "a same-source train neighbour at pHash ham ≤ 2; every candidate was reviewed on "
         "manual montages. MSE ≤ 900 was chosen as the cut after observing same-scene pairs at "
-        "MSE ≤ 817 and terrain-similarity false positives at MSE ≥ 958 (D014). "
-        "30 true-leak eval images were removed (13 at MSE ≤ 100, 17 more at MSE ≤ 900, "
-        "including a cross-folder duplicate ds0_0043 ↔ ds1_0043).", BODY))
+        "MSE ≤ 817.85 and terrain-similarity false positives at MSE ≥ 958.6 (D014). "
+        "30 true-leak eval images were removed in two passes (13, then 17): 19 valid + 11 test, "
+        "taking the eval pools from 200/200 group representatives to the frozen 181/189 "
+        "(including a cross-folder duplicate ds0_0043 ↔ ds1_0043). The threshold is not "
+        "knife-edge: a sweep over the pre-removal candidate list is in "
+        "paper_results/analysis/mse_sensitivity.md (500 → 25/30 captured, 900 → 30/30, "
+        "1500 → 30/30 plus 35 same-scene survivors).", BODY))
 
     s.append(P("2.3 Leakage definition (operational, D014)", H2))
     s.append(P(
@@ -364,7 +388,7 @@ def main() -> None:
     yolo_rows = [["seed", "ckpt", "val mAP50", "test mAP50", "test mAP50-95",
                   "OP conf (val)", "box P@OP", "box R@OP", "FP/img@OP", "img P", "img R"]]
     for s_i, (tr, vr) in enumerate(zip(tests, vals)):
-        cy = vr.get("chosen_on_val", {})
+        cy = tr.get("chosen_on_val", {})
         ckpt = cy.get("checkpoint", "—")
         op = tr["ops"]["op97_primary"]
         opl = op["image_level"]
@@ -434,20 +458,24 @@ def main() -> None:
     s.append(P("7.1 Pipeline design", H2))
     s.extend(fig(PR / "figures" / "pipeline.png", max_h=2.8 * inch))
     s.append(P(
-        "Stage 1: YOLOv8s proposes boxes. Stage 2: each box is expanded by 20% context, resized "
-        "to 224×224, and scored by a MobileNetV3-Salt crop classifier (sigmoid). A detection "
-        "survives if its crop score ≥ τ. Three arms are compared on test after thresholds are "
-        "frozen from val: <b>Arm A</b> = YOLO alone at the Phase-3 deployment OP conf; "
-        "<b>Arm B</b> = YOLO alone at the conf that matches the two-stage val recall; "
-        "<b>Arm C</b> = two-stage (YOLO + crop filter).", BODY))
+        "Stage 1: YOLOv8s (seed 0 for every seed run) proposes boxes; detections are cached at "
+        "the lowest conf any arm evaluates (0.02), so all arms see the same candidate set. For "
+        "the two-stage arm the proposal conf is 0.05. Stage 2: each box is expanded by 20% "
+        "context, resized to 224×224, and scored by a MobileNetV3-Small crop classifier "
+        "(sigmoid). A detection survives if its crop score ≥ τ, except detections at "
+        "conf ≥ P, which pass without rechecking. Three arms are compared on test after "
+        "thresholds are frozen from val: <b>Arm A</b> = YOLO alone at the Phase-3 deployment "
+        "OP conf (0.02); <b>Arm B</b> = YOLO alone at the conf that matches the two-stage val "
+        "recall (0.125); <b>Arm C</b> = two-stage (YOLO @0.05 + crop filter).", BODY))
 
     s.append(P("7.2 Crop dataset construction", H2))
     s.append(P(
         "phase5_build_crops.py mines false positives from an intermediate YOLO checkpoint "
         "(epoch20.pt, conf 0.05) on train, then builds: train 11 550 positive crops + 15 411 "
-        "negatives (11 661 random-background + 3 730 YOLO-FP + 20 empty); valid 419 pos + 529 neg; "
-        "27 909 total. Sampled crops were eyeballed (mine / rocky-FP / background all correct). "
-        "Raw crop images stay local (gitignored); the recipe is in paper_results/stage2/crop_recipe.md.", BODY))
+        "negatives (11 661 random-background + 3 730 YOLO-FP + 20 empty) = 26 961; valid 419 pos "
+        "+ 529 neg = 948. Sampled crops were eyeballed (mine / rocky-FP / background all "
+        "correct). Raw crop images stay local (gitignored); the recipe is in "
+        "paper_results/stage2/crop_recipe.md.", BODY))
 
     s.append(P("7.3 Stage-2 training and ratio search", H2))
     s.append(P(
@@ -461,8 +489,9 @@ def main() -> None:
         "On val only: sweep P ∈ {0.4, 0.6, 0.8, none}; for each P pick the largest τ whose "
         "val box-recall is within 0.5 pts of stage-1 recall at the proposal conf; among those "
         "pick the pair with lowest val FP/image (tie: higher P). All three seeds chose "
-        "<b>P = 0.4</b> with τ = 0.27 / 0.29 / 0.38. Arm-A conf = each seed's Phase-3 primary OP "
-        "conf; Arm-B conf matched on val (0.125 for seed 0).", BODY))
+        "<b>P = 0.4</b> with τ = 0.27 / 0.29 / 0.38. Arm-A conf = 0.02 (seed-0 Phase-3 primary "
+        "OP, reused for all stage-2 runs because all three runs use the seed-0 detector); "
+        "Arm-B conf = 0.125, matched on val for seed 0. Arm C proposals use conf 0.05.", BODY))
 
     s.append(P("7.5 Test results (touches #6/#7/#8) + paired bootstrap", H2))
     ts_rows = [["seed", "arm", "conf/τ", "precision", "recall", "FP/img", "img recall"]]
@@ -471,13 +500,24 @@ def main() -> None:
                          ("B", "B_yolo_only_matched_recall"),
                          ("C", "C_two_stage")):
             a = rep["arms"][key]
-            conf = a.get("conf", a.get("tau", "—"))
+            if key == "C_two_stage":
+                eff = rep.get("chosen_effective", {})
+                conf = (f"{eff.get('yolo_conf', '—')} / τ={a.get('cls_thr', '—')} / "
+                        f"P={a.get('protect_conf', '—')}")
+            else:
+                conf = str(rep.get("arm_a_conf" if key == "A_yolo_only_deploy" else "arm_b_conf", "—"))
             ts_rows.append([
-                str(s_i), arm, str(conf),
+                str(s_i), arm, conf,
                 f"{a['precision']:.3f}", f"{a['recall']:.3f}",
                 f"{a['fp_per_image']:.3f}", f"{a['img_recall']:.3f}",
             ])
-    s.append(table(ts_rows, col_w=[0.5*inch, 0.5*inch, 0.9*inch, 1.1*inch, 1.0*inch, 1.0*inch, 1.1*inch]))
+    s.append(table(ts_rows, col_w=[0.5*inch, 0.5*inch, 1.55*inch, 1.0*inch, 0.95*inch,
+                                   0.95*inch, 1.0*inch]))
+    s.append(P(
+        "All three stage-2 runs use the <b>seed-0 detector</b> (each with its own crop-classifier "
+        "seed), so arm A/B rows are identical across the three blocks. Arm C values in this "
+        "table are the frozen pre-fix evaluation; the seed-0 post-fix recount is "
+        "P 0.894 / R 0.972 / FP-img 0.153 (all arms before/after in §10).", SMALL))
     pb = ts_reps[0]["paired_diff_C_minus_B"]
     s.append(P(
         f"Seed-0 paired bootstrap (C − B, 2000 resamples of the 189 test images): "
@@ -500,9 +540,12 @@ def main() -> None:
     s.append(P(
         "Honest reading: arm C (red star) sits near the test-tuned YOLO-alone curve at matched "
         "recall — against a <i>test-tuned</i> threshold the gain is about break-even. The "
-        "pre-registered claim is against <b>arm B</b> (val-matched conf 0.125), which transferred "
-        "poorly to test (val→test shift). Choosing the curve point on test would be peeking, "
-        "which the plan forbids; the paired bootstrap C−B is the fair comparison and it excludes 0.", BODY))
+        "val-matched comparison that governs the claim is against <b>arm B</b> (conf 0.125), "
+        "which transferred poorly to test (val→test shift). Choosing the curve point on test "
+        "would be peeking, which the plan forbids; the paired bootstrap C−B is the fair "
+        "comparison and it excludes 0. No timestamped pre-registration exists: the claim rule "
+        "itself was written before the test numbers but cannot be independently verified, so we "
+        "describe it as pre-specified in the project plan, not pre-registered.", BODY))
     s.append(PageBreak())
 
     # ================= 8. PER-SOURCE =================
@@ -531,17 +574,22 @@ def main() -> None:
 
     s.append(P("9.1 E1 — energy in GT boxes (n=244 TP)", H2))
     s.append(P(
-        f"Energy share inside GT boxes: median {e1.get('energy_median', '—')}, "
-        f"enrichment median {e1.get('enrichment_median', '—')}× "
-        f"(vs uniform expectation), peak-inside rate {e1.get('peak_inside_rate', '—')}. "
-        "The detector's mass concentrates on the mine, not the surround.", BODY))
+        f"Energy share inside GT boxes: median "
+        f"{e1.get('energy_share', {}).get('median', '—'):.3f}, "
+        f"enrichment median {e1.get('enrichment', {}).get('median', '—'):.1f}× "
+        f"(vs uniform expectation), peak-inside rate {e1.get('peak_inside_rate', '—'):.3f}. "
+        f"{e1_zero} of 244 TPs have exactly zero CAM energy inside the box (small/edge boxes; "
+        "these are the rows E5 audits). On the remaining TPs the mass concentrates on the mine, "
+        "not the surround.", BODY))
     s.extend(fig(PR / "figures" / "energy_in_box_hist.png", max_h=3.2 * inch))
 
     s.append(P("9.2 E2 — deletion test (n=182)", H2))
     s.append(P(
-        f"Mean score drop when the top-energy mine region is removed: "
-        f"{e2.get('drop_mine_mean', '—')} vs {e2.get('drop_bg_mean', '—')} when an equal-area "
-        "background region is removed. Causal: the model needs the mine region.", BODY))
+        f"Mean score drop when the top-energy mine region is replaced with its mean intensity: "
+        f"{e2.get('drop_mine', {}).get('mean', '—'):.3f} vs "
+        f"{e2.get('drop_bg', {}).get('mean', '—'):.4f} when an equal-area background region is "
+        "replaced the same way. Dependence: the score depends on the mine region, not merely on "
+        "the image being masked.", BODY))
 
     s.append(P("9.3 E4 — failure taxonomy (9 FN + 29 FP, hand-categorized)", H2))
     s.append(P(
@@ -554,30 +602,36 @@ def main() -> None:
     s.append(P(
         f"E5 flags images in the lowest 10% of CAM energy-in-<i>union-of-all-GT-boxes</i> "
         f"(per-image, not per-det — per-det rows flood multi-mine images with zeros). "
-        f"Test: {e5.get('test_flagged', '—')} flagged at threshold "
-        f"{e5.get('test_threshold', '—')}; train: {e5.get('train_flagged', '—')} at "
-        f"{e5.get('train_threshold', '—')}. Hand review: the only two zero-energy test images "
-        f"are ds0_0801 and ds0_0883 — independent confirmation of the E4 label errors. "
-        f"No objective train-label errors found.", BODY))
+        f"Test: {e5.get('test', {}).get('flagged', '—')} flagged at threshold "
+        f"{e5.get('test', {}).get('thr_energy', '—'):.3f}; train: "
+        f"{e5.get('train', {}).get('flagged', '—')} at "
+        f"{e5.get('train', {}).get('thr_energy', '—'):.3f}. Hand review: the only two "
+        f"zero-energy test images are ds0_0801 and ds0_0883 — independent confirmation of the "
+        f"E4 label errors. No objective train-label errors found.", BODY))
     s.extend(fig(PR / "figures" / "e5_audit_test.png", max_h=3.5 * inch))
 
     s.append(P("9.5 E6 — YOLO vs MNv3 saliency head-to-head", H2))
     s.append(P(
         f"On 182 both-positive images: enrichment median YOLO "
-        f"{e6.get('yolo_median_enrichment', '—')}× vs MNv3 baseline "
-        f"{e6.get('baseline_median_enrichment', '—')}×; paired diff "
-        f"{e6.get('paired_diff_median', '—')} CI "
-        f"{e6.get('paired_diff_ci95', '—')} (excludes 0). Stage-2 crop enrichment median "
-        f"{e6.get('stage2_crop_median_enrichment', '—')} (crops are mine-centric by "
-        f"construction, so enrichment is low — expected).", BODY))
+        f"{e6.get('yolo_enrichment', {}).get('median', '—'):.1f}× vs MNv3 baseline "
+        f"{e6.get('mnv3_enrichment', {}).get('median', '—'):.2f}×; paired diff "
+        f"{e6.get('paired_diff_yolo_minus_mnv3', {}).get('mean', '—'):.1f} CI "
+        f"[{e6.get('paired_diff_yolo_minus_mnv3', {}).get('ci95', ['—', '—'])[0]:.1f}, "
+        f"{e6.get('paired_diff_yolo_minus_mnv3', {}).get('ci95', ['—', '—'])[1]:.1f}] "
+        f"(excludes 0). Stage-2 crop enrichment median "
+        f"{e6.get('stage2_crop_enrichment', {}).get('median', '—'):.2f} (crops are mine-centric "
+        f"by construction, so enrichment is low — expected). Not strictly like-for-like: YOLO is "
+        f"cued on 640 px detector inputs, MNv3 on a 224 px image-level crop.", BODY))
     s.extend(fig(PR / "figures" / "gradcam_example_grid.png", max_h=4.0 * inch))
 
     s.append(P("9.6 E3 — counterfactual paste / remove", H2))
     s.append(P(
         f"Paste-hold (mine pasted into a new background): detection held for "
-        f"{e3.get('paste_hold_rate', '—')} at deploy conf (0.630 at conf 0.125) vs 0.976 recall "
-        f"on originals — caveat: feathered edges + source/dest scale mismatch in some pastes. "
-        f"Remove (inpaint the mine): disappeared {e3.get('remove_disappear_rate', '—')} / 100. "
+        f"{e3.get('paste', {}).get('detected_rate_conf002', '—'):.2f} at deploy conf "
+        f"({e3.get('paste', {}).get('detected_rate_conf0125', '—'):.2f} at conf 0.125) vs 0.976 "
+        f"recall on originals — caveat: feathered edges + source/dest scale mismatch in some "
+        f"pastes. Remove (inpaint the mine): disappeared 100/100 "
+        f"(rate {e3.get('remove', {}).get('disappeared_rate', '—'):.2f}). "
         f"Marker check: no consistent marker/paint/flag cue adjacent to test mines in 12 zoom "
         f"crops (e3_marker_check.png).", BODY))
     s.extend(fig(PR / "figures" / "e3_paste.png", max_h=3.0 * inch))
@@ -586,16 +640,28 @@ def main() -> None:
 
     # ================= 10. LABEL FIXES =================
     s.append(P("10. Label fixes (D023)", H1))
-    cfix = lf["arms"]["C_two_stage"]
     s.append(P(
-        f"Two objectively wrong test boxes were identified (E4 review + E5 energy = 0.000) and "
-        f"removed: ds0_0801 (box on tree trunk) and ds0_0883 (box on fence). "
-        f"Baseline arm-C numbers were asserted to reproduce the frozen test_report before the fix. "
-        f"Arm C: recall {cfix['recall']['before']:.4f} → {cfix['recall']['after']:.4f}; "
-        f"image recall {cfix['img_recall']['before']:.4f} → {cfix['img_recall']['after']:.4f}; "
-        f"FP/img unchanged {cfix['fp_per_image']['after']:.3f}. "
-        f"No train-label fixes found; optional retrain not run (budget scope). "
-        f"Full before/after for all arms: paper_results/label_fix_report.json.", BODY))
+        "Two objectively wrong test boxes were identified (E4 review + E5 energy = 0.000) and "
+        "removed: ds0_0801 (box on tree trunk) and ds0_0883 (box on fence). The frozen test "
+        "records were re-scored against the corrected ground truth for seed 0 (the seed-0 "
+        "detector is shared by all stage-2 runs). Before → after:", BODY))
+    lf_rows = [["arm", "precision", "recall", "FP/img", "img recall"]]
+    for k, label in (("A_yolo_only_deploy", "A (deploy)"),
+                     ("B_yolo_only_matched_recall", "B (matched)"),
+                     ("C_two_stage", "C (two-stage)")):
+        a = cfix_all[k]
+        lf_rows.append([
+            label,
+            f"{a['precision']['before']:.3f} → {a['precision']['after']:.3f}",
+            f"{a['recall']['before']:.4f} → {a['recall']['after']:.4f}",
+            f"{a['fp_per_image']['before']:.3f} → {a['fp_per_image']['after']:.3f}",
+            f"{a['img_recall']['before']:.4f} → {a['img_recall']['after']:.4f}",
+        ])
+    s.append(table(lf_rows, col_w=[1.3*inch, 1.4*inch, 1.6*inch, 1.3*inch, 1.2*inch]))
+    s.append(P(
+        "No train-label fixes were found; the optional retrain was not run. Seeds 1–2 were not "
+        "recounted after the fix, so their headline numbers remain pre-fix (disclosed in §5 and "
+        "the headline table). Full artifact: paper_results/label_fix_report.json.", BODY))
     s.append(PageBreak())
 
     # ================= 11. TABLES =================
@@ -686,20 +752,43 @@ def main() -> None:
     # ================= 15. LIMITATIONS =================
     s.append(P("15. Limitations and what was NOT run", H1))
     for item in [
-        "yolov8n / yolov8m size-sweep rows: out of approved budget (only yolov8s trained on v2).",
+        "Headline detector results are yolov8s; yolov8n/yolov8m size points are reported "
+        "separately as extended-budget runs.",
         "Jetson / T7 edge latency (phases 7/8): dropped under approved scope; all numbers are PC GPU FP32.",
         "Optional retrain on fixed train labels: not run (no objective train-label errors found).",
-        "Dataset itself is not in git (size/licensing); v2 split manifest sha256 is committed.",
+        "Dataset itself is not in git (size); the v2 split manifest sha256 is committed.",
         "Jan LWIR files are colour RGB with marker pins (not thermal); kept with disclosure (D012/D016).",
         "Stage-2 crop images stay local (regenerable via phase5_build_crops.py).",
-        "Arm C ≈ test-tuned YOLO curve at matched recall; the pre-registered gain is vs val-matched arm B.",
+        "Arm C ≈ test-tuned YOLO curve at matched recall; the val-matched gain is vs arm B. "
+        "The claim rule was pre-specified in the project plan, but no timestamped preregistration exists.",
         "MNv3 baseline is weak (7 negative test images → high seed variance); it is a floor, not a competitor.",
         "E3 paste-hold uses synthetic composites (feathered edges, scale mismatch) — not a perfect counterfactual.",
         "Single class (Landmine); no mine-type discrimination.",
+        "Test set has only 5 negative images, so precision and FP/img are high-variance; CIs are reported.",
     ]:
         s.append(P(f"• {item}", BODY))
 
-    s.append(P("16. Reproduction", H1))
+    # ================= 16. ETHICS / PROVENANCE =================
+    s.append(P("16. Ethics, dual-use, provenance, and availability", H1))
+    s.append(P(
+        "<b>Dual use.</b> This work detects visible landmine-like objects and surface indicators "
+        "from RGB imagery. The same capability could assist clearance operations or be misused "
+        "for placement/marking avoidance. We report standard detection metrics only, publish no "
+        "targeting guidance, and frame all claims as a computer-vision benchmark on a public "
+        "Roboflow-derived dataset — not an operational clearance system. Physical limits (an RGB "
+        "camera cannot see buried objects) are stated in §1.", BODY))
+    s.append(P(
+        "<b>Provenance.</b> Images derive from public Roboflow landmine datasets (ds0, ds1) plus "
+        "May/Jan LWIR-named RGB collections; the original combined dataset and v1 runs are "
+        "unmodified (D001). The rebuilt v2 split is frozen by a committed manifest SHA-256; the "
+        "leakage audit, per-image source labels, and all removed-leak candidates are committed as "
+        "CSV artifacts.", BODY))
+    s.append(P(
+        "<b>Availability.</b> Code, per-seed weights (best/last/ONNX), tables, figures, and PDFs "
+        "are in this repository; the dataset itself is not redistributed (size). No license or "
+        "terms-of-use artifact is included in this release.", BODY))
+
+    s.append(P("17. Reproduction", H1))
     s.append(P("Every artifact is regenerable from committed scripts:", BODY))
     for cmd in [
         "python scripts/phase1_audit.py --dataset landmine_combined_v2 --out paper_results/audit_v2_final",
@@ -708,6 +797,7 @@ def main() -> None:
         "python phase4_mnv3_baseline.py --stage AB --imgsz 224 --seed {0,1,2} …",
         "python phase5_build_crops.py && python phase5_train_stage2.py --ratio 1 --seed {0,1,2} && python phase5_pipeline.py",
         "python phase6_gradcam.py && python phase6_e5_flags.py && python phase6_e6_headtohead.py && python phase6_e3_paste.py",
+        "python make_mse_sensitivity.py && python analysis_stats.py",
         "python make_tables.py && python make_test_vis.py && python make_report_pdfs.py && python make_master_report.py",
     ]:
         s.append(P(cmd, CODE))

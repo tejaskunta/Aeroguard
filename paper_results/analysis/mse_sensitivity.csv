@@ -1,0 +1,9 @@
+mse_threshold,flagged_total,true_leaks_captured,removed_still_flagged,survivors_flagged,recall_of_30_leaks
+250,18,18,18,0,0.6
+500,25,25,25,0,0.833
+750,29,29,29,0,0.967
+900,30,30,30,0,1.0
+1100,38,30,30,8,1.0
+1300,51,30,30,21,1.0
+1500,65,30,30,35,1.0
+2000,95,30,30,65,1.0
