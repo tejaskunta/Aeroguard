@@ -1,0 +1,126 @@
+\section{Leakage Audit}
+\label{sec:audit}
+
+\subsection{The original split fails}
+
+The first audit pass over the pooled corpus returned a clear failure. Of the
+evaluation images, $63.8\%$ had a training image within perceptual-hash Hamming
+distance $2$, and $76$ Roboflow base names appeared in more than one split
+(train$\cap$valid $37$, train$\cap$test $31$, valid$\cap$test $10$). A montage
+of the base-name collisions shows the same physical scene, the same mine
+placement, and different export bytes: these are re-exports, not distinct
+photographs. The mechanism is augmentation before splitting, present in the
+upstream generation scripts. The test split also contained zero negative images,
+so false-alarm rate was undefined. We therefore discarded the split entirely
+rather than attempting to patch it.
+
+\subsection{Operational leak definition}
+
+A validation or test image $x$ is a leak if any training image shares any of:
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+\item the exact MD5 digest;
+\item the Roboflow base key (filename with the \texttt{*.rf.<md5>.jpg} export
+suffix stripped);
+\item the same source id \emph{and} a 64-bit perceptual hash \citep{zauner2010phash}
+within Hamming distance $2$ under all eight dihedral transforms, \emph{and} a
+$32\times32$ RGB mean-squared error below $900$.
+\end{enumerate}
+
+Condition 3 is a conjunction for a reason. Perceptual hash alone over-fires on
+repetitive terrain: grass and dirt produce Hamming collisions that are not the
+same scene. The MSE term separates the two populations, and manual review sets
+the cut. Every Hamming-$\le 2$ candidate---$146$ pairs across two rounds---was
+rendered side by side and inspected. Confirmed same-scene pairs occurred at
+$\mathrm{MSE} \le 817$; terrain-texture coincidences at
+$\mathrm{MSE} \ge 958.6$. The gap is narrow but unambiguous on montage, and the
+cut at $900$ sits inside it.
+
+\subsection{Rebuilding and freezing}
+
+Groups were formed from base key, capture session, and same-source hash edges,
+yielding $1{,}048$ groups, then assigned whole to a split. Two filtering passes
+removed $30$ evaluation images: $13$ at $\mathrm{MSE}\le 100$, then $17$ more at
+$\mathrm{MSE}\le 900$, including a cross-folder duplicate
+(\texttt{ds0\_0043}$\leftrightarrow$\texttt{ds1\_0043}). The split is
+$19$ validation and $11$ test images lighter as a result. The residual $99$ of
+$370$ evaluation images with a Hamming-$\le 2$ training neighbour all have
+$\mathrm{MSE} \ge 958.6$ and were verified as texture false positives. True leak
+rate: $0/370$.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Leakage audit outcome for the frozen split. ``Residual candidates''
+are Hamming-$\le2$ pairs rejected by the pixel-MSE test and manual review.}
+\label{tab:audit}
+\begin{tabular}{lr}
+\toprule
+quantity & value \\
+\midrule
+Images (train / valid / test) & 3{,}907 / 181 / 189 \\
+Instances & 11{,}550 / 419 / 253 \\
+Negatives & 20 / 7 / 5 \\
+Exact cross-split duplicate groups & 0 \\
+Base-key collisions (train-valid / train-test / valid-test) & 0 / 0 / 0 \\
+Residual near-duplicate candidates & 99 (all MSE $\ge 958.6$) \\
+Evaluation images removed as leaks & 30 (19 valid, 11 test) \\
+Confirmed true leak rate & $0/370 = 0.0\%$ \\
+Manifest SHA-256 & \texttt{748322d6\ldots c80de} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{What the leak was worth}
+\label{sec:leakvalue}
+
+An audit is only useful if it changes something. We therefore trained a YOLOv8s
+detector on the \emph{old} split (the ``leaky'' model) and compared it with the
+clean-trained seed-0 detector on the clean test set. This is the natural
+before/after experiment, and it has a trap: $140$ of $189$ clean test images
+($74.1\%$) share a v2 group with an image the leaky model trained on. Scoring the
+leaky model on the full test set therefore measures memorisation.
+
+The results are in Table~\ref{tab:leaky}. On its own split the leaky model
+reaches $0.970$ mAP$_{50}$, but that split has zero negatives, so false-positive
+rate is undefined and the number cannot be compared with anything in this paper.
+On the full clean test set it reaches $0.994$, comfortably above the clean
+model's $0.974$. On the $49$ contamination-free images the two are tied:
+$0.9950$ against $0.9947$ mAP$_{50}$, and $0.725$ against $0.701$ mAP$_{50\text{--}95}$.
+The $49$-image subset is small and the comparison is therefore low-powered, but
+the direction is unambiguous: the apparent $+0.020$ advantage is contamination,
+and the honest estimate of the leak's effect on this corpus is close to zero.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Leaky-versus-clean comparison. The leaky model's operating confidence
+($0.065$) was chosen on the old validation split; the clean model's ($0.02$) on
+the new one. P and FP/image are therefore not threshold-matched and mAP is the
+fair column.}
+\label{tab:leaky}
+\begin{tabular}{llcccc}
+\toprule
+model & evaluation set & mAP$_{50}$ & mAP$_{50\text{--}95}$ & P & FP/img \\
+\midrule
+leaky v1 & v1 test (own split) & 0.9697 & 0.6436 & 0.834 & n/a (0 neg) \\
+leaky v1 & v2 test, full (74.1\% contaminated) & 0.9940 & --- & 0.857 & 0.222 \\
+clean v2 s0 & v2 test, full & 0.9741 & 0.6924 & 0.427 & 1.751 \\
+\midrule
+leaky v1 & v2 test, contamination-free ($n=49$) & 0.9950 & 0.7250 & 0.863 & 0.204 \\
+clean v2 s0 & v2 test, contamination-free ($n=49$) & 0.9947 & 0.7010 & 0.354 & 2.347 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a negative result and we treat it as one. The literature on leakage
+\citep{kapoor2023leakage,recht2019imagenet} prepares one to expect a large
+inflation. Here the clean and leaky models converge on the leak-free images, which
+suggests that for this task the leaked material mostly taught the model the same
+thing the clean data does. That is not a reason to skip the audit---the old split
+remains unusable, because its selection split was contaminated and its test split
+had no negatives---but it is a reason to report the size of the effect honestly
+rather than using the audit as a rhetorical amplifier. It also has a practical
+implication: an audit that only reports ``we fixed leakage'' without measuring the
+contamination-free delta leaves the reader unable to judge whether the fix
+mattered.

@@ -1,0 +1,110 @@
+\section{Decision log (abridged)}
+\label{app:decisions}
+
+The project kept a numbered decision register. The entries that bear on claims in
+this paper are reproduced here; the full register, with dates and rationale for
+all $23$ entries, is in \texttt{DECISIONS.md}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Abridged decision register. Entries omitted here concern file layout and
+tooling rather than claims.}
+\label{tab:decisions}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.055\linewidth}p{0.86\linewidth}}
+\toprule
+ID & Decision and reason \\
+\midrule
+D010 & Reject the original split. $76$ cross-split base-name groups; $63.8\%$
+of evaluation images with a pHash-$\le2$ training neighbour; augmentation before
+splitting confirmed in the upstream scripts. \\
+D011 & Image-level and FP/image metrics blocked until the test split contains
+negatives. It contained zero. \\
+D012 & \texttt{May}/\texttt{Jan} files are colour RGB with marker pins, not
+thermal, despite the \texttt{lwir} filename. Keep and disclose (D016). \\
+D014 & Operational leak definition: exact MD5, or base key, or same-source
+pHash$\le2$ \emph{and} $32\times32$ RGB MSE $\le 900$. Manual review of all $146$
+candidates sets the MSE cut (same-scene $\le 817$, texture $\ge 958.6$). \\
+D015 & Freeze \texttt{landmine\_combined\_v2} at 3{,}907/181/189 with $30$ eval
+leaks removed; manifest digest \texttt{748322d6\ldots c80de}; true leak rate
+$0/370$. \\
+D017 & Disclosed protocol deviation: the upstream training script auto-evaluates
+test at confidence $0.25$. No selection uses those numbers; the frozen-protocol
+evaluation is a separate single pass. \\
+D018 & Accept early stopping at epoch $67/75$ (best $47$) for the pilot run;
+retrain at batch $8$ for comparability (D019). The pilot is not a paper result. \\
+D020 & Frozen-feature MNv3 is degenerate on negatives at every resolution and
+batch size ($\kappa \approx 0$); only fine-tuning the last layers separates them.
+Stage A rows retained as the mandated ablation. \\
+D021 & Threshold rule: sweep protection $P$, choose the largest $\tau$ within
+$0.5$ points of stage-1 validation recall, then minimise validation FP/image.
+All seeds select $P=0.4$. \\
+D022 & Grad-CAM flags images by energy in the union of all ground-truth boxes,
+not per detection; per-detection rows were an instance-count artefact on
+multi-mine frames. \\
+D023 & Remove two objectively wrong test boxes (tree trunk, fence); report
+before/after; do not retrain (no training-label errors found). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Test-touch accounting}
+\label{app:touches}
+
+Eighteen numbered test touches were logged. Grouped by purpose:
+
+\begin{table}[H]
+\centering
+\small
+\caption{Test-touch accounting, grouped by purpose.}
+\label{tab:touches}
+\begin{tabular}{@{}p{0.10\linewidth}p{0.34\linewidth}p{0.48\linewidth}@{}}
+\toprule
+touches & purpose & sanctioning rule \\
+\midrule
+\#1--\#2 & audit read-only passes & leakage audit reads labels only \\
+\#3 & MNv3 baseline, seed 0 & Phase 4 protocol eval, val-chosen thresholds \\
+\#4 & YOLO seed-0 frozen-protocol eval & the single protocol-governing eval \\
+\#5 & MNv3 seeds 1--2 & Phase 4 protocol eval \\
+\#6--\#8 & two-stage seeds 0--2 & Phase 5 protocol eval, val-frozen \\
+\#9--\#12 & Grad-CAM E1--E6 & Phase 6, read-only attribution \\
+\#13--\#14 & YOLO seeds 1--2 & Phase 3 per-seed protocol eval \\
+\#15--\#16 & leaky baseline, v1 split and clean subset & extended analysis \\
+\#17 & YOLOv8n size point & size ablation, val-chosen threshold \\
+\#18 & corrected detector-aligned two-stage & re-score, no selection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The only touch that could contaminate a claim is \#4, and it is the evaluation the
+paper's detector numbers come from. Touch \#18 is a correction: the original
+seed-1/2 two-stage runs had reused the seed-0 detector, which we detected from
+byte-identical arm-A/arm-B records and corrected by re-running with each seed's
+own checkpoint. No threshold was re-chosen.
+
+\section{Failure gallery and reproduction commands}
+\label{app:repro}
+
+The false-positive contact sheet is reproduced in Figure~\ref{fig:failures}. The
+full false-negative gallery, the audit montages, the per-image predictions, and
+the Grad-CAM heatmaps are in the repository under \texttt{paper\_results/}.
+
+\begin{verbatim}
+# tables T1-T6 and figures (no GPU, no dataset required)
+python src/reporting/make_tables.py
+
+# frozen-protocol evaluation of a checkpoint
+python src/evaluation/phase3_eval.py --run <run_dir> --out <out_dir>
+
+# two-stage pipeline with each detector seed
+python src/pipeline/phase5_pipeline.py --yolo <seed_best.pt> \
+    --cls <stage2_best.pt> --arm-a-conf <val_conf> --out <out_dir>
+
+# statistical analysis, bootstrap and policy rules
+python src/analysis/analysis_stats.py
+\end{verbatim}
+
+Environment: Python 3.11.9, Ultralytics 8.4.117, PyTorch 2.6.0+cu124,
+torchvision 0.21.0+cu124, NVIDIA RTX~4070 Laptop (8\,GB). Evaluation at
+$640\times640$, NMS IoU $0.7$, \texttt{max\_det} $300$, FP32, no TTA.

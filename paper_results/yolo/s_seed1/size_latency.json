@@ -1,11 +1,12 @@
 {
   "params": 11125971,
-  "gflops": null,
+  "gflops": 28.6,
   "weights_mb": 21.478426933288574,
   "latency_ms_median": 6.958850000955863,
   "latency_ms_p95": 7.527599998866208,
   "imgsz": 640,
   "fp": "FP32 PC GPU",
   "reps": 50,
-  "warmup": 10
+  "warmup": 10,
+  "gflops_note": "GFLOPs at imgsz 640 for this repo's single-class model (nc=1). Computed offline with ultralytics.utils.torch_utils.get_flops; it reproduces the value read off the committed yolov8s best.pt (28.6) and matches Ultralytics' published nc=80 figure for that size. The nc=80 published values are n 8.7 / s 28.6 / m 78.9 / l 165.1 / x 257.8."
 }

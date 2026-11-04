@@ -1,0 +1,107 @@
+\section{Method}
+\label{sec:method}
+
+\subsection{Detector}
+
+We use Ultralytics YOLOv8 \citep{jocher2023ultralytics} at two depths,
+\texttt{yolov8s} and \texttt{yolov8n}, both with a single-class head. Models are
+initialised from COCO-pretrained weights and fine-tuned for $75$ epochs at
+$640\times640$, batch $8$, with the Ultralytics default augmentation recipe and
+early-stopping patience $20$. The \texttt{s} model is trained with seeds
+$0,1,2$; the \texttt{n} model with seed $0$ only, as a single size point. All
+runs use the same pinned stack (Ultralytics 8.4.117, PyTorch 2.6.0+cu124) on one
+RTX~4070 Laptop GPU with $8$\,GB of memory.
+
+Checkpoint selection is done on validation. For each seed we keep the checkpoint
+(last or best) that gives the better validation operating point, then choose the
+confidence threshold on validation and apply it unchanged to test. No test
+quantity influences any choice. This is the only point in the protocol where
+discipline costs something: for some seeds the validation-optimal threshold
+transfers badly to test, and we do not fix that after the fact
+(Section~\ref{sec:twostage}).
+
+\subsection{Operating points}
+
+For a set of detections, precision $P$, recall $R$ and false positives per image
+$\mathrm{FP/img}$ are all functions of a confidence threshold. We define two
+operating points on validation and carry both to test:
+
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item \textbf{Recall-first ($\mathrm{OP}_{97}$).} The largest confidence whose
+validation box recall is at least $0.97$. This is the operating point a
+demining workflow would plausibly choose: a missed mine is a safety event, a
+false alarm is an analyst cost. It is the primary point in all tables.
+\item \textbf{High-precision ($\mathrm{OP}_{95}$).} The largest confidence with
+validation recall at least $0.95$, used only for the image-level comparison.
+\end{itemize}
+
+mAP is computed in the usual way at a low confidence floor ($0.001$) and reported
+for comparability with the literature. It plays no role in any selection.
+
+\subsection{Two-stage pipeline}
+
+The second stage is a MobileNetV3-Large classifier \citep{howard2019mobilenetv3}
+applied to detector crops. Each detection box is expanded by $20\%$ on each side,
+cropped, and resized to $224\times224$; the classifier outputs a single sigmoid
+score. Training crops are $11{,}550$ positives and $15{,}411$ negatives, the
+latter comprising random background, $3{,}730$ detector false positives mined at
+confidence $0.05$ from an epoch-20 checkpoint, and $20$ empty-frame samples.
+Positives and negatives are sampled $1{:}1$ per epoch; the classifier is
+fine-tuned end-to-end for $30$ epochs at learning rate $2\times10^{-5}$ with
+per-sample class weights $[97.7, 0.50]$ to compensate the $3{,}887{:}20$
+image-level imbalance. The $1{:}1$ ratio and the unfrozen-late-layers recipe were
+chosen on validation, and a five-variant ablation is reported in
+Section~\ref{sec:ablation}.
+
+We compare three arms, all evaluated on test exactly once with validation-frozen
+parameters:
+
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item \textbf{A (deploy).} YOLO at its validation-chosen
+$\mathrm{OP}_{97}$ confidence.
+\item \textbf{B (matched recall).} YOLO at the confidence that matches arm A's
+\emph{validation} recall. This isolates the classifier's contribution from the
+trivial effect of thresholding harder.
+\item \textbf{C (two-stage).} YOLO proposals at a fixed low confidence
+($0.05$) are routed through the classifier; a proposal is kept if it passes
+either a \emph{protection} rule (detector confidence $\ge P$) or the classifier
+threshold $\tau$. $P$ is swept over $\{0.4, 0.6, 0.8, \infty\}$ on validation;
+for each $P$ we take the largest $\tau$ whose validation recall is within $0.5$
+points of stage-1 recall, then choose the pair with the lowest validation
+FP/image. All three seeds select $P=0.4$, with
+$\tau = 0.27 / 0.23 / 0.22$ for seeds $0/1/2$.
+\end{itemize}
+
+The protection rule matters. Without it the classifier can veto a
+high-confidence detection, and on this corpus that costs recall on the
+multi-object \texttt{Jan} source. With $P=0.4$ the pipeline is allowed to
+suppress only low-confidence proposals, which is the regime where the
+classifier's crop evidence is useful.
+
+\subsection{Statistics}
+
+All test comparisons use the same $189$ images, so we resample images, not
+detections. For a paired comparison between two arms we draw $5{,}000$ bootstrap
+replicates of the image set \citep{efron1993bootstrap} and report the $95\%$
+percentile interval of the difference. For single-arm uncertainty we additionally
+report a source-cluster bootstrap over the three test sources, and a
+leave-one-source-out analysis; with three clusters these intervals are wide by
+construction, and we present them as such rather than as precise estimates.
+Image-level agreement uses Cohen's $\kappa$ \citep{cohen1960kappa} alongside
+balanced accuracy, because the test set has only $5$ negative images and raw
+accuracy is dominated by the positive class.
+
+\subsection{Attribution audit}
+
+We compute Grad-CAM \citep{selvaraju2017gradcam} on the neck feature maps feeding
+the detection head, targeting the top pre-NMS class score, and on the last
+convolutional block of the classifier. Because the top pre-NMS anchor usually
+sits on the stride-8 head, the largest stride with a non-zero gradient is used;
+this deviates from the common stride-32 choice and is documented with the code.
+We report four quantities: the share of CAM energy inside the ground-truth box
+(and its enrichment over the box's area share), whether the CAM peak falls inside
+the box, the drop in detection score when the box is masked versus when a
+matched background region is masked, and a head-to-head comparison of detector
+and classifier saliency on the same crops. Every sentence about these numbers is
+phrased as evidence about \emph{where the model looked}, never about whether the
+prediction is correct.

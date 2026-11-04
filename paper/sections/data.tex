@@ -1,0 +1,119 @@
+\section{Data}
+\label{sec:data}
+
+\subsection{Corpus and task}
+
+The corpus pools five public Roboflow Universe landmine-detection exports,
+identified here by source id: \texttt{ds0}, \texttt{ds1}, \texttt{May\_lwir},
+\texttt{Jan\_lwir}, and a small derived set folded into \texttt{ds0}. Each image
+carries one class, \texttt{landmine}, and axis-aligned boxes. There is no
+mine-type label; the task is presence and localisation of a visible
+mine-like object. Table~\ref{tab:data} gives the frozen split.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Frozen dataset \texttt{landmine\_combined\_v2}. ``neg'' counts images
+with an empty label file (deliberate negatives), not missing labels; there are
+zero missing labels. Manifest digest
+\texttt{748322d6\ldots c80de}.}
+\label{tab:data}
+\begin{tabular}{lrrrr}
+\toprule
+split & images & instances & neg & sources \\
+\midrule
+train & 3{,}907 & 11{,}550 & 20 & Jan 100, May 776, ds0 2{,}589, ds1 442 \\
+valid & 181 & 419 & 7 & Jan 42, ds0 138, ds1 1 \\
+test & 189 & 253 & 5 & Jan 10, ds0 151, ds1 28 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The class is heavily imbalanced in the detection sense and, more importantly,
+heterogeneous in acquisition. Table~\ref{tab:shift} shows the source/split shift
+that dominates the results later. \texttt{Jan\_lwir} images average $7.7$ boxes
+per test image; \texttt{ds0} and \texttt{ds1} average about one. A model that
+learns ``many objects'' from \texttt{Jan} and applies it to \texttt{ds0} will
+generate false positives by construction, and vice versa. This is not a nuisance
+to be averaged away: it is the principal source of variance in the test set, and
+we return to it in Section~\ref{sec:persource}.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Source and split composition. The test set is dominated by
+\texttt{ds0} images (151 of 189) but by \texttt{Jan} boxes (77 of 253).}
+\label{tab:shift}
+\begin{tabular}{llrrrr}
+\toprule
+split/source & & images & boxes & boxes/img & empty rate \\
+\midrule
+test & Jan\_lwir & 10 & 77 & 7.70 & 0.00\% \\
+test & ds0 & 151 & 148 & 0.98 & 1.99\% \\
+test & ds1 & 28 & 28 & 1.00 & 7.14\% \\
+\midrule
+train & Jan\_lwir & 100 & 740 & 7.40 & 0.00\% \\
+train & May\_lwir & 776 & 7{,}706 & 9.93 & 0.00\% \\
+train & ds0 & 2{,}589 & 2{,}643 & 1.02 & 0.77\% \\
+train & ds1 & 442 & 461 & 1.04 & 0.00\% \\
+\midrule
+valid & Jan\_lwir & 42 & 287 & 6.83 & 0.00\% \\
+valid & ds0 & 138 & 131 & 0.95 & 5.07\% \\
+valid & ds1 & 1 & 1 & 1.00 & 0.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Two content defects, disclosed}
+
+\paragraph{The \texttt{lwir} files are not thermal.} Sources named
+\texttt{May\_lwir} and \texttt{Jan\_lwir} suggest long-wave infrared imagery. They
+are not. Mean HSV saturation on a $24$-image sample is $0.38$, against $0.25$ for
+the \texttt{ds0} RGB reference, and the images carry visible marker pins. They are
+colour RGB photographs. We keep them, because removing them would drop the only
+multi-object source and make the task artificially easy, and we disclose the
+consequence: a model could exploit marker pins as a shortcut. A twelve-crop zoom
+check around test mines found no consistent marker, paint, or flag cue, but we
+cannot rule out a subtler one, and we do not make thermal claims anywhere in this
+paper.
+
+\paragraph{Two test labels are objectively wrong.} Manual review identified two
+test boxes that are not on mines: \texttt{ds0\_0801} annotates a tree trunk and
+\texttt{ds0\_0883} annotates a fence. Both were confirmed independently by a
+Grad-CAM energy of exactly zero (Section~\ref{sec:gradcam}). We remove them from
+ground truth and report results both with and without the correction
+(Table~\ref{tab:labelfix}). No training labels were found to be wrong, so no
+retraining was performed.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Effect of removing two objectively wrong test boxes (no retraining).
+Intervals in the source artifact are unchanged; the shift is a ground-truth
+correction, not a model change.}
+\label{tab:labelfix}
+\begin{tabular}{lccc}
+\toprule
+arm & metric & before & after \\
+\midrule
+C (two-stage) & box recall & 0.9644 & 0.9721 \\
+C (two-stage) & image recall & 0.9891 & 1.0000 \\
+C (two-stage) & FP/image & 0.153 & 0.153 \\
+A (YOLO deploy) & box recall & 0.9763 & 0.9841 \\
+B (YOLO matched) & box recall & 0.9723 & 0.9801 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Provenance and redistribution}
+
+The source archives were obtained as public exports, but their licence terms were
+not recorded at download time and the original project URLs are no longer
+available to this project. We therefore do not redistribute any image, label file,
+or crop. What is released is the split manifest with a SHA-256 digest, the
+removed-leak list with reasons, the audit CSVs and montages, the trained weights,
+and the code. Anyone holding the original archives can reconstruct the exact
+splits byte-for-byte from the manifest. Full detail is in
+\texttt{DATA\_PROVENANCE.md}; the weights carry the upstream Ultralytics AGPL-3.0
+terms (Section~\ref{sec:availability}). We regard the missing licence record as a
+defect of this study and state it rather than inferring a permissive licence.

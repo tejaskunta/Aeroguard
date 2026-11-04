@@ -1,0 +1,53 @@
+\section{Experimental Protocol and Reproducibility}
+\label{sec:protocol}
+
+\paragraph{Frozen rules.} Five rules governed every run, and we report violations
+as well as compliance. (i) Thresholds are chosen on validation only. (ii) Every
+evaluation that touches test is logged, numbered, and justified in advance.
+(iii) Every number in this paper is produced by a committed script reading a
+committed JSON or CSV. (iv) The original dataset and the pre-audit runs are never
+modified. (v) Test labels are corrected only when objectively wrong, with
+before/after numbers reported.
+
+\paragraph{Test-touch accounting.} The full log contains $18$ numbered touches.
+Four are large: the seed-0 frozen-protocol detector evaluation, the seed-0 and
+seed-1/2 two-stage evaluations, and the corrected detector-aligned two-stage
+re-scoring. The remainder are the per-seed detector evaluations, the MNv3
+baseline evaluations, and the Grad-CAM passes, each sanctioned by the protocol
+before execution. We also disclose a deviation: the upstream training script
+auto-evaluates test at confidence $0.25$ at the end of training, and this
+behaviour could not be disabled by flag. It is recorded as D017. No threshold,
+checkpoint, or architecture choice references those numbers; they appear in no
+table here. The frozen-protocol evaluation is a separate, single pass.
+
+\paragraph{Correction we had to make.} An earlier version of the three-seed
+two-stage result reused the seed-0 detector for all three seeds, producing a
+tight mean of $0.879 \pm 0.018$. The arms A and B records were byte-identical
+across seeds, which is the tell. Re-running the pipeline with each seed's own
+detector gives $0.894 / 0.825 / 0.724$ and a standard deviation of $0.086$. The
+tight interval was an artifact of a shared component. We report the corrected
+numbers throughout and flag the earlier figure as withdrawn.
+
+\paragraph{Compute.} All training and evaluation ran on one NVIDIA RTX~4070
+Laptop GPU with $8$\,GB of memory, under Windows, within an approved budget of
+roughly $30$ GPU-hours. Detector training took $50$--$85$ minutes per seed;
+the second-stage classifier $30$ epochs per run; the ablation matrix five
+classifier retrains. Evaluation uses $640\times640$ input, NMS IoU $0.7$,
+\texttt{max\_det} $300$, FP32, no test-time augmentation. Latency figures are PC
+GPU FP32 medians over $50$ repetitions after $10$ warm-up iterations, and are
+\emph{not} edge-device numbers; no Jetson or TensorRT measurement was performed.
+
+\paragraph{What the budget forbade.} We did not train YOLOv8m or YOLOv8l on the
+clean split, did not evaluate a second detector family (RT-DETR or Faster
+R-CNN), did not run grouped cross-validation, did not re-mine hard negatives on
+data the detector had not seen, and did not retrain after the test-label
+correction. Each omission is a real limitation and is listed in
+Section~\ref{sec:limitations}. We prefer to name them than to let a single-seed
+or single-family result stand in for a claim it cannot support.
+
+\paragraph{Artifacts.} The repository contains the code, the six detector
+checkpoints (three seeds, ONNX included), the three stage-2 checkpoints, the
+frozen split manifest and its digest, all evaluation JSONs, the generated tables,
+and the figures. Regenerating the tables requires no GPU and no dataset: the
+committed JSONs are sufficient, and the table script fails loudly if a required
+field is missing rather than silently substituting a value.

@@ -1,0 +1,34 @@
+\section{Availability and Licensing}
+\label{sec:availability}
+
+\paragraph{Code and artifacts.} Training, evaluation, auditing, Grad-CAM and
+table-generation code are released with the paper, together with all evaluation
+JSONs, the generated tables, and the figures. The frozen split manifest is
+released as a CSV with the following SHA-256 digest:
+
+\begin{center}\small\ttfamily
+748322d62ace769445d0bd2363699097\\
+0c7a5115a99c9344e139099c608c80de
+\end{center}
+
+\noindent No image, label file, or crop is redistributed; see
+\texttt{DATA\_PROVENANCE.md} for the reason and for the exact source inventory.
+
+\paragraph{Weights.} Three detector seeds are released, each with
+\texttt{best.pt}, \texttt{last.pt} and an ONNX export, plus three stage-2
+checkpoints and the original v1 run for reference, all with a SHA-256 manifest.
+The detector checkpoints are derivative works of Ultralytics YOLOv8 and are
+distributed under \textbf{AGPL-3.0}; the stage-2 checkpoints are fine-tuned
+torchvision MobileNetV3-Large and are distributed under the same repository
+licence for consistency. Third-party terms are stated in
+\texttt{models/NOTICE.md}. The repository code and the audit artifacts are
+AGPL-3.0.
+
+\paragraph{Reproduction.} Regenerating every table requires no GPU and no
+dataset: the committed JSONs are sufficient. The table script exits with an error
+if a required field is absent rather than substituting a value, so a clean clone
+either reproduces the tables in this paper or fails visibly.
+
+\paragraph{Persistent identifier.} \todo{assign DOI via Zenodo on release; insert
+the DOI and the exact release tag here. The manifest digest above is the
+content-level identifier that will not change.}

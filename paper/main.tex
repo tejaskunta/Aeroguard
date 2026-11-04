@@ -1,0 +1,57 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage[round]{natbib}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{float}
+
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+% Headline numbers, defined once so prose and tables cannot drift.
+\newcommand{\maptest}{0.977}
+\newcommand{\mapstd}{0.003}
+\newcommand{\fps}{1.51}
+\newcommand{\fpn}{6.50}
+\newcommand{\manifestsum}{748322d6}
+
+\title{\bfseries Not the Metric You Report:\\[4pt]
+Leakage-Audited Landmine Surface Detection,\\[2pt]
+and Why mAP$_{50}$ Cannot Choose an Operating Point}
+
+\author{Anonymous Authors\\[2pt]
+\small Preprint. Under review.}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\input{sections/abstract}
+
+\input{sections/intro}
+\input{sections/related}
+\input{sections/data}
+\input{sections/audit}
+\input{sections/method}
+\input{sections/protocol}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/ethics}
+\input{sections/availability}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

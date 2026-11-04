@@ -43,7 +43,7 @@ def main() -> int:
         w = (REPO_ROOT / w).resolve()
     if not w.exists():
         print(f"ERROR: weights not found: {w}")
-        print("       Train first (week3_train_yolov8.py), then copy to weights/best.pt")
+        print("       Train first (src/training/week3_train_yolov8.py), then copy to weights/best.pt")
         return 1
 
     from ultralytics import YOLO

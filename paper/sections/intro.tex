@@ -1,0 +1,101 @@
+\section{Introduction}
+\label{sec:intro}
+
+A landmine detector that is evaluated with mean average precision is being asked
+the wrong question. Mean average precision integrates performance over every
+confidence threshold and every recall level, then reduces the result to one
+number. A demining team does not operate a curve; it operates one threshold, on
+one day, with one tolerance for false alarms. Two systems can share a curve and
+behave completely differently at the threshold that will actually be used. This
+paper is an extended argument, with measurements, that the operating point---and
+not the summary curve---is the object that should be reported, and that the
+usually unglamorous work of auditing the split is what makes any such comparison
+believable.
+
+We study single-class detection of \emph{surface} landmine indicators from
+downward-looking aerial imagery. The scope limitation is physical and we state it
+first: a visible-light or colour camera cannot see a buried object. What it can
+see is a mine lying on the surface, a partially exposed casing, or a surface
+marker. Claims in this paper are therefore claims about visible surface objects,
+not about buried ordnance, and nothing here is a field-validated clearance
+system. The task is nonetheless a useful stress test for detection methodology,
+because the class is rare, the imagery is heterogeneous, and the published data
+reuse is heavy.
+
+\paragraph{What we found.} Three results organise the paper.
+
+\begin{enumerate}[leftmargin=1.2em,itemsep=2pt]
+\item \textbf{The split leaks, and the leak is measurable.} The combined
+landmine corpus contains $76$ filename groups (Roboflow base names) that span
+train and evaluation splits, and $63.8\%$ of validation and test images have a
+perceptual-hash neighbour in training. This is the signature of augmentation
+applied before splitting: the same scene, re-exported, lands on both sides of the
+boundary. After rebuilding the split group-wise and filtering twice, $30$
+evaluation images are removed as true leaks. A detector trained on the leaky
+split scores $0.994$ mAP$_{50}$ on the full clean test set, against $0.974$ for a
+clean-trained detector. On the $49$ test images that are contamination-free for
+both, the two are tied at $0.995$ and $0.995$. The leak inflated the number, but
+by less than the folklore predicts---a negative result, and one that would have
+been invisible without the contamination-free subset.
+
+\item \textbf{mAP$_{50}$ saturates before the deployment question is asked.} A
+YOLOv8s detector over three seeds reaches $0.977 \pm 0.003$ test mAP$_{50}$; a
+YOLOv8n detector with $3.7\times$ fewer parameters reaches $0.979$. Ranked by
+mAP, the smaller model is as good or better, at $8.2$ GFLOPs instead of $28.6$.
+Ranked by the recall-first operating point chosen on validation, the smaller model
+produces $6.50$ false positives per image against $1.51$---a $4.3\times$
+difference that no mAP column reveals. The ranking reversal is our headline
+finding, and it is a statement about evaluation, not about architectures.
+
+\item \textbf{The two-stage gain is detector-dependent, and we can say why.} A
+MobileNetV3-Large classifier over detector crops improves precision over a
+recall-matched single-stage baseline at two of three detector seeds
+($\Delta P = +0.128$ and $+0.144$, paired bootstrap intervals excluding zero).
+At the third seed it is \emph{worse} ($\Delta P = -0.037$, interval
+$[-0.077, +0.013]$). Under a max-$F_2$ rule, a single confidence threshold tuned
+on validation beats the two-stage pipeline outright ($P = 0.976$ vs.\ $0.945$).
+The mechanism is not that the classifier localises better. It is that the
+classifier rescues seeds whose validation-selected threshold transferred poorly
+to test. Where the baseline threshold transfers well, the second stage has
+nothing to add. Reporting a three-seed mean of $0.879 \pm 0.018$ would have hidden
+this entirely; we report the per-seed structure instead.
+\end{enumerate}
+
+\paragraph{Why this is worth publishing.} None of the three findings required a
+new architecture, a large GPU, or a new dataset. They required (i) reconstructing
+the split from scratch, (ii) refusing to average over seeds when the seeds
+disagree structurally, and (iii) measuring at the operating point rather than at
+the summary. The total compute was one 8\,GB laptop GPU and roughly $30$ hours.
+We think this is a realistic and under-reported budget for applied detection
+work, and we document what it forbade (Section~\ref{sec:limitations}) rather than
+implying broader coverage.
+
+\paragraph{Contributions.}
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item A reproducible leakage audit of a publicly derived landmine corpus: an
+operational leak definition, a two-method filter with a manually validated MSE
+cut, a frozen manifest, and an accounting of all $30$ removals
+(Section~\ref{sec:audit}).
+\item A direct leaky-versus-clean comparison on a contamination-free subset,
+including the unfavourable result that the leak's effect on mAP$_{50}$ is small
+(Section~\ref{sec:leakvalue}).
+\item An operating-point evaluation protocol---thresholds chosen on validation
+only, applied once to test, with paired image bootstrap and source-cluster
+intervals---and the demonstration that it reverses an mAP-based ranking
+(Section~\ref{sec:results}).
+\item A per-seed analysis of a two-stage detector-plus-classifier pipeline that
+localises a failure rather than averaging it away, together with a max-$F_2$
+analysis showing when the second stage is not worth its cost
+(Section~\ref{sec:twostage}).
+\item A Grad-CAM audit used as a sanity check on evidence, with an explicit
+separation between attribution and correctness, showing that the image-level
+classifier's accuracy is not accompanied by object-level evidence
+(Section~\ref{sec:gradcam}).
+\end{itemize}
+
+Section~\ref{sec:related} positions the work; Section~\ref{sec:data} describes the
+corpus and its provenance; Section~\ref{sec:audit} the audit;
+Sections~\ref{sec:method}--\ref{sec:protocol} the models and protocol;
+Section~\ref{sec:results} the results; Sections~\ref{sec:discussion}--\ref{sec:ethics}
+discussion, limitations and ethics. Code, weights, tables and the frozen split
+manifest accompany the paper (Section~\ref{sec:availability}).

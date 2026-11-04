@@ -127,11 +127,11 @@ def main() -> int:
     head("Verdict")
     if problems:
         print(f"{BAD}{len(problems)} problem(s): " + ", ".join(problems))
-        print("\n     Fix these before running week3_train_yolov8.py.")
+        print("\n     Fix these before running src/training/week3_train_yolov8.py.")
         return 1
     print(f"{OK}Everything looks good. Next:")
     print("       python scripts/make_smoke_dataset.py      # fake data, 2 min")
-    print("       python week3_train_yolov8.py --data datasets/smoke_test/data.yaml --epochs 3")
+    print("       python src/training/week3_train_yolov8.py --data datasets/smoke_test/data.yaml --epochs 3")
     return 0
 
 

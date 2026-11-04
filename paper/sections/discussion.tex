@@ -1,0 +1,50 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Report the operating point, then the curve.} The size sweep is the
+cleanest demonstration we have that mAP and deployment behaviour are different
+measurements. \texttt{yolov8n} and \texttt{yolov8s} are indistinguishable on test
+mAP$_{50}$ and differ by $4.3\times$ in false alarms at the recall-first point.
+The mechanism is not mysterious: mAP integrates over confidence, and a model can
+rank detections well while being badly calibrated near the threshold a user will
+pick. The recommendation is concrete and cheap. Report, at minimum: the
+validation procedure used to choose a threshold, the threshold itself for every
+seed, and precision, recall, and false-positives-per-image at that threshold on
+test. Report mAP as well, for comparability, but do not let it be the only row.
+
+\paragraph{Threshold transfer is the hidden variable.} Our three seeds select
+thresholds of $0.02$, $0.01$, and $0.21$ for the same architecture, same data,
+same schedule. That is not a bug in the search; it is what happens when a
+validation set has $181$ images and $7$ negatives. The consequence is that
+``model precision'' pooled over seeds is mostly a statement about which
+threshold each seed happened to pick. This also explains the two-stage result:
+the classifier looks valuable exactly where the threshold transferred badly.
+Any ablation that changes a component downstream of a fragile threshold will
+inherit that fragility, and a single pooled mean will hide it.
+
+\paragraph{When is a second stage worth it?} On this evidence, narrowly. The
+classifier is defensible if the requirement is recall $\ge 0.96$ with minimum
+false alarms, and if the detector's threshold is known to be unreliable. It is
+not defensible as a general precision improvement, because a tuned single-stage
+threshold beats it at max-$F_2$, and its benefit disappears at the seed whose
+threshold transferred well. The cost is real: $16.0$\,ms per image end to end and
+$3.06$ crops per image on average (95th percentile $3.6$). For a pipeline that
+processes every frame of a flight, that is a meaningful multiplier for a gain
+that is conditional.
+
+\paragraph{Leakage is worth measuring, not just fixing.} The contamination-free
+comparison is a negative result, and we think negative results of this kind
+should be routine. Fixing a split is good practice; quantifying what the fix
+changed is what tells the reader whether the original numbers were wrong by
+$0.002$ or by $0.2$. Here it is $0.0003$ on the comparable subset. We would not
+have known that from the audit alone, and we would have been tempted to describe
+the leak as catastrophic.
+
+\paragraph{What the saliency audit bought.} Two things. First, it independently
+confirmed the two wrong labels, which is a useful cross-check on a manual
+review. Second, it showed that a $97.4\%$-accurate image classifier has almost no
+object-localised evidence. Without that measurement we might have described the
+MNv3 baseline as ``weak but reasonable''; with it, we can say it is exploiting
+context, which is a different and more useful statement. Attribution did not
+prove any prediction correct, and we have tried to keep every sentence on the
+correct side of that line.

@@ -1,0 +1,66 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Landmine and UXO detection.} The physical sensing literature is
+large and predates deep learning by decades: metal detectors, ground-penetrating
+radar, infrared and multispectral sensing, and combinations thereof
+\citep{siegel2002landmine,kasban2010comparative}. What matters for this paper is
+a distinction that the computer-vision literature often blurs. Subsurface sensing
+asks whether a buried object is present; visible-band aerial imaging asks whether
+a surface object or marker is visible. The two tasks have different base rates,
+different failure modes, and different false-alarm costs. We therefore restrict
+every claim to the visible-surface task and treat buried-object performance as
+out of scope rather than as a gap to be estimated. The humanitarian scale of the
+problem is documented annually by the Landmine Monitor \citep{icbl2023landmine};
+we mention it to motivate careful evaluation, not to claim operational utility.
+
+\paragraph{Detectors.} The YOLO family \citep{redmon2018yolov3,jocher2023ultralytics}
+remains the default for small-object aerial detection because of its latency at
+moderate resolution. Alternatives include anchor-free and transformer-based
+detectors \citep{tian2019fcos,carion2020detr,zhao2024rtdetr} and two-stage
+region proposals \citep{ren2015faster}, with focal loss
+\citep{lin2017focal} addressing foreground imbalance. Our contribution is not a
+detector. We deliberately use the most standard available baseline, because the
+point is that evaluation choices dominate architecture choices at this scale. The
+lightweight classifier in our second stage is MobileNetV3
+\citep{howard2019mobilenetv3}, chosen for cost rather than novelty.
+
+\paragraph{Leakage and reproducibility.} That machine-learning results can be
+inflated by information leaking across train and evaluation splits is now well
+documented, both as a general methodological failure
+\citep{kapoor2023leakage,kapoor2024reforms,roberts2021pitfalls} and in specific
+benchmarks \citep{recht2019imagenet,barz2020train}. The canonical defence is
+group-aware splitting, so that no group---scene, patient, site, or source
+document---spans the boundary \citep{kohavi1995study}. In image corpora, groups
+must be recovered from pixels when filenames are unreliable: perceptual hashing
+\citep{zauner2010phash} proposes near-duplicate candidates, and a pixel-space
+distance such as MSE or SSIM \citep{wang2004ssim} separates true re-exports from
+terrain-texture coincidences. Our audit follows exactly this two-stage pattern,
+and we report the threshold at which the two methods disagree. Publicly shared
+detection datasets frequently originate as re-exports of the same source
+collection, which is why base-key collisions matter independently of pixels.
+
+\paragraph{Evaluation beyond mAP.} The mismatch between average precision and
+deployed behaviour is an old observation in detection. \citet{hoiem2012diagnosing}
+argued for error diagnosis over single scores; \citet{dollar2012pedestrian}
+popularised log-average miss rate at a fixed false-positive-per-image budget
+precisely because average precision hides the low-false-alarm regime. Our
+protocol adopts false-positives-per-image at a recall-first operating point as the
+primary quantity, and reports mAP only as a secondary, comparable-to-the-literature
+number. We also follow the recommendation to report intervals rather than point
+estimates: paired image bootstrap for comparisons on the same images
+\citep{efron1993bootstrap}, and source-cluster resampling where the effective
+sample size is the number of acquisition sources, not the number of images.
+Agreement statistics use Cohen's $\kappa$ \citep{cohen1960kappa} for image-level
+decisions. Dataset and model documentation follow the datasheet and model-card
+conventions \citep{gebru2021datasheets,mitchell2019modelcards}.
+
+\paragraph{Attribution methods.} Grad-CAM \citep{selvaraju2017gradcam} and its
+variants \citep{chattopadhyay2018gradcampp} are widely used to argue that a model
+``looks at the right thing''. The evidence that saliency maps can be insensitive
+to model parameters \citep{adebayo2018sanity}, and that deletion-style tests are
+the appropriate falsification \citep{samek2017evaluating}, means attribution
+should be treated as a diagnostic and never as proof of correctness. The
+Clever Hans literature \citep{lapuschkin2019unmasking} is the cautionary case: a
+classifier can be accurate for the wrong reason. We use Grad-CAM in that
+falsification role only, and we report where it fails.

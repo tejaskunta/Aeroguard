@@ -111,7 +111,8 @@ misses. Does the sampling interval actually cover the search area?
 - Seed: `0` (the script default)
 - Full command used for the shipped model:
   ```
-  python week3_train_yolov8.py --data ... 
+  python src/training/week3_train_yolov8.py --data ...
   ```
-- Git commit of this repo at training time: `___`
+- Git commit of this repo at training time: `0551835dd0c5b48126123e508ecb64b9d2289ef7` (release HEAD; the
+  original phase runs predate this and are recorded per-run in `RUN_LOG.md`)
 - `ultralytics` / `torch` versions: (printed by `scripts/check_env.py`)

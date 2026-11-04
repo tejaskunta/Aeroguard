@@ -20,14 +20,29 @@ indicators only** — buried objects are invisible to the camera (design constra
 
 | Path | Contents |
 |---|---|
-| `models/` | **All trained weights** (YOLO 3 seeds, stage-2 3 seeds, original v1) + SHA256 + README |
+| `paper/` | **Manuscript** (LaTeX, single-column preprint) + `refs.bib` + build `Makefile` |
+| `models/` | **All trained weights** (YOLO 3 seeds, stage-2 3 seeds, original v1) + SHA256 + README + `NOTICE.md` |
 | `reports/` | **PDF reports** — per-seed training reports + multi-phase research summary |
 | `paper_results/` | Tables (T1–T6 .md/.tex), figures, per-seed eval JSONs, Grad-CAM, visualizations |
-| `RUN_LOG.md` | Every run + every test-set touch (numbered #1–#14) |
+| `docs/reports/` | Pre-v2 SafeMine report (historical) |
+| `RUN_LOG.md` | Every run + every test-set touch (numbered #1–#18) |
 | `DECISIONS.md` | D001–D023 research decisions with rationale |
 | `ENVIRONMENT.txt` | Pinned deps, GPU, commit, eval protocol |
-| Training/eval scripts | `week3_train_yolov8.py`, `phase3_eval.py`, `phase4_mnv3_baseline.py`, `phase5_pipeline.py`, `phase6_*.py` |
-| Table/figure/PDF generators | `make_tables.py`, `make_report_pdfs.py`, `make_test_vis.py` |
+| `src/common/` | Shared library: `two_stage_eval.py`, `mnv3_shared.py` |
+| `src/training/` | `week3_train_yolov8.py`, `phase5_train_stage2.py` |
+| `src/evaluation/` | `phase3_eval.py`, `per_source_report.py`, `label_fix_report.py` |
+| `src/pipeline/` | `phase5_build_crops.py`, `phase5_pipeline.py` |
+| `src/gradcam/` | `phase6_gradcam.py`, `phase6_e3_paste.py`, `phase6_e5_flags.py`, `phase6_e6_headtohead.py` |
+| `src/baseline/` | `phase4_mnv3_baseline.py` |
+| `src/analysis/` | `analysis_stats.py`, `dump_raw_stage2.py`, `make_ablation_matrix.py`, `make_leaky_vs_clean.py`, `make_mse_sensitivity.py` |
+| `src/reporting/` | `make_tables.py`, `make_report_pdfs.py`, `make_test_vis.py`, `make_master_report.py` |
+| `scripts/` | Dataset audit/resplit (`phase1_audit.py`, `phase2_*.py`), export/predict |
+| `scripts/inspect/` | Ad-hoc JSON/crop inspection helpers (`dump_*.py`) |
+| `tests/` | `pytest` suite (`conftest.py` puts `src/*` on the path) |
+| `backend/`, `jetson/` | Serving stub and TensorRT inference |
+
+Every script resolves the repo root from `Path(__file__)`, so all commands below
+run from the repository root regardless of where the script lives.
 
 ## Quick start (inference)
 
@@ -46,13 +61,20 @@ print(r[0].boxes)
 
 Two-stage arm C: run YOLO at the seed's OP conf, crop each box + 20% context to
 224×224, score with `models/stage2_s0/best.pt` (sigmoid), keep if score ≥ τ
-(0.27 for seed 0; val-chosen). See `phase5_pipeline.py`.
+(0.27 for seed 0; val-chosen). See `src/pipeline/phase5_pipeline.py`.
 
 ## Regenerating paper artifacts
 
 ```bash
-python make_tables.py         # T1–T6 (.md/.tex) + figures/
-python make_report_pdfs.py    # reports/*.pdf (reads committed JSON only)
+python src/reporting/make_tables.py       # T1–T6 (.md/.tex) + figures/
+python src/reporting/make_report_pdfs.py  # reports/*.pdf (reads committed JSON only)
+cd paper && make                          # paper/main.pdf
+```
+
+Tests (no GPU or dataset needed for the pure-metric cases):
+
+```bash
+python -m pytest tests/
 ```
 
 ## Dataset
@@ -61,6 +83,15 @@ Not in git (size/licensing). Trained on `landmine_combined_v2`:
 train 3907 / valid 181 / test 189 images, 0 true cross-split leaks.
 Split manifest sha256: see `paper_results/split_v2/sha256.txt`.
 Original sources: Roboflow landmine datasets (ds0, ds1, Jan LWIR, May, …).
+Full provenance, licence status, and the manifest-only redistribution policy are
+in [`DATA_PROVENANCE.md`](DATA_PROVENANCE.md).
+
+## License
+
+Code, split manifest, tables and figures: **AGPL-3.0** (see `LICENSE`).
+The released YOLO checkpoints are derivative works of Ultralytics YOLOv8 and are
+also AGPL-3.0; the stage-2 checkpoints are fine-tuned torchvision MobileNetV3-Large.
+See [`models/NOTICE.md`](models/NOTICE.md). **No dataset images are redistributed.**
 
 ## Protocol (non-negotiable)
 
@@ -68,6 +99,11 @@ Original sources: Roboflow landmine datasets (ds0, ds1, Jan LWIR, May, …).
 2. Every test touch logged in `RUN_LOG.md`.
 3. Every paper number comes from a committed script + JSON.
 4. Original dataset / v1 runs never modified.
+
+> The rules above govern *what* is run, not *where* the script lives, so the
+> `src/<subpackage>/` layout does not affect the protocol. Scripts were later
+> collected under `src/` and `scripts/`; `RUN_LOG.md` entries have been updated
+> to the current paths (see the note at the top of that file).
 5. Labels fixed only if objectively wrong (2 test boxes; before/after reported).
 
 ## History

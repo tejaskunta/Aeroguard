@@ -8,7 +8,7 @@ Trained on the frozen `landmine_combined_v2` split (train 3907 / valid 181 / tes
 | Path | What |
 |---|---|
 | `yolo_s_seed{0,1,2}/` | YOLOv8s 75-epoch detector, seeds 0/1/2. `best.pt` / `last.pt` / `best.onnx` + training `args.yaml` + `results.csv` |
-| `stage2_s{0,1,2}/` | Stage-2 MobileNetV3-small crop classifier (two-stage pipeline arm C). Input = YOLO box + 20% context, 224×224 crop; sigmoid score |
+| `stage2_s{0,1,2}/` | Stage-2 MobileNetV3-Large crop classifier (two-stage pipeline arm C). Input = YOLO box + 20% context, 224×224 crop; sigmoid score |
 | `original_v1/` | Original v1 yolov8m run (pre-v2-split, kept for reference only — **do not use for paper numbers**) |
 | `SHA256SUMS.txt` | sha256 of every weight/config file above |
 
@@ -34,8 +34,8 @@ model = YOLO("models/yolo_s_seed0/best.pt")
 results = model.predict(source="path/to/image.jpg", conf=0.02)  # frozen OP conf
 ```
 
-Stage-2 classifier: standard torchvision MobileNetV3-Small, 1 class, sigmoid score;
-threshold τ = 0.27 / 0.29 / 0.38 for seeds 0/1/2 (chosen on val only).
+Stage-2 classifier: standard torchvision MobileNetV3-Large, 1 class, sigmoid score;
+threshold τ = 0.27 / 0.23 / 0.22 for detector seeds 0/1/2 (chosen on val only).
 
 ## Not included (by design)
 
@@ -45,6 +45,6 @@ threshold τ = 0.27 / 0.29 / 0.38 for seeds 0/1/2 (chosen on val only).
 
 ## Provenance
 
-Every training/eval command is logged in `RUN_LOG.md` (test touches #1–#14).
+Every training/eval command is logged in `RUN_LOG.md` (test touches #1–#18).
 Environment pin: ultralytics 8.4.117, torch 2.6.0+cu124, see `ENVIRONMENT.txt`.
-Paper tables/figures regenerate via `make_tables.py`; PDF reports via `make_report_pdfs.py`.
+Paper tables/figures regenerate via `src/reporting/make_tables.py`; PDF reports via `src/reporting/make_report_pdfs.py`.

@@ -1,0 +1,40 @@
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=2pt]
+\item \textbf{Compute.} All results come from one $8$\,GB laptop GPU and roughly
+$30$ GPU-hours. This single constraint explains most of the gaps below. We state
+it once rather than repeating it as a caveat on every claim.
+\item \textbf{One detector family, two depths on the clean split.} YOLOv8s
+(three seeds) and YOLOv8n (one seed). YOLOv8m was trained only on the old leaky
+split and is therefore not comparable; we exclude it from the size sweep rather
+than presenting a contaminated point.
+\item \textbf{Single seed for the small model.} The \texttt{yolov8n} row has no
+interval. Its mAP advantage over \texttt{yolov8s} is within the latter's seed
+spread, and we do not claim it is a better detector.
+\item \textbf{Five negative test images.} Precision and FP/image are
+high-variance; the source-cluster intervals span an order of magnitude. Point
+estimates in tables are accompanied by intervals wherever the interval is
+meaningful.
+\item \textbf{Label correction without retraining.} Two test boxes were removed
+from ground truth. We report both versions, but the model was not retrained on
+corrected labels because no training-label errors were found.
+\item \textbf{No grouped cross-validation.} A single frozen split was used, as
+required by the protocol. Group-aware $k$-fold would give a better estimate of
+split variance and was not affordable.
+\item \textbf{No hard-negative re-mining on unseen data.} The stage-2 negatives
+come from detector false positives on the training split, which is the correct
+procedure but limits how novel the negatives are.
+\item \textbf{Synthetic composites.} The paste-and-remove experiment uses
+feathered, scale-mismatched composites. It is a probe, not a counterfactual.
+\item \textbf{Not edge-validated.} All latency numbers are PC GPU FP32. No
+Jetson, TensorRT, or flight hardware was used; the edge phases were dropped from
+scope.
+\item \textbf{Source confound.} \texttt{Jan} and \texttt{May} are colour
+photographs with marker pins, despite \texttt{lwir} in the filename. Marker
+shortcuts cannot be fully excluded, and the source dominates aggregate false
+alarms.
+\item \textbf{No field validation and no buried-object claim.} This is a
+benchmark on visible surface indicators. It says nothing about burial depth,
+soil type, or detection probability in real clearance conditions.
+\end{enumerate}

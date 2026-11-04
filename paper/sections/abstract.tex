@@ -1,0 +1,43 @@
+\begin{abstract}
+Detection benchmarks in aerial and remote-sensing settings are usually ranked by
+mean average precision (mAP). We show that on a small, single-class landmine
+surface-indicator dataset this ranking is uninformative for deployment: a
+3.0\,M-parameter detector and an 11.1\,M-parameter detector differ by less than
+the seed-to-seed spread in test mAP$_{50}$ ($0.979$ vs.\ $0.977 \pm 0.003$), yet their
+recall-first operating points differ by a factor of $4.3$ in false positives per
+image ($6.50$ vs.\ $1.51$). We argue that the meaningful object of study is the
+operating point, not the summary curve, and we build the evaluation protocol
+around that claim.
+
+The study rests on two methodological contributions that require no new
+architecture. First, we audit a widely reused landmine image corpus and find that
+its published split leaks: $76$ Roboflow base-name groups span splits and
+$63.8\%$ of evaluation images have a near-duplicate in training, consistent with
+augmentation applied before splitting. We rebuild the split group-wise, apply a
+two-method leak filter (perceptual hash plus pixel MSE) with manual review of
+every candidate, and remove $30$ evaluation images. The frozen manifest
+(3{,}907 / 181 / 189 images; digest \texttt{\manifestsum\ldots}) contains no
+exact duplicate, no base-key collision, and no confirmed near-duplicate leak.
+
+Second, we measure what the leak was worth. A detector trained on the leaky split
+scores $0.994$ mAP$_{50}$ on the full clean test set against $0.974$ for a
+clean-trained model, but on the $49$ contamination-free test images the two are
+tied ($0.995$ vs.\ $0.995$). The apparent inflation is therefore contamination,
+not capability---and it is small, a negative result we report rather than bury.
+
+We then evaluate a MobileNetV3-Large second stage over detector crops on three
+detector seeds. The two-stage arm improves precision over a recall-matched
+single-stage baseline at two of three seeds ($\Delta P = +0.128$ and $+0.144$,
+bootstrap intervals excluding zero) but fails at the third
+($\Delta P = -0.037$, interval $[-0.077, +0.013]$). Under a max-$F_2$ rule a
+val-tuned single-stage threshold beats the two-stage pipeline outright
+($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent rather
+than architectural, and we identify the mechanism: the two-stage gain comes from
+rescuing seeds whose val-selected threshold transferred poorly, not from better
+localisation. Grad-CAM confirms that the detector's evidence lies on the objects
+(median $58\times$ energy enrichment over chance) and that the second stage adds
+almost no spatial evidence of its own ($1.82\times$ for the image-level baseline,
+$2.13\times$ for crops)---a caution against reading a classifier's accuracy as
+reasoning. All experiments were run on one 8\,GB laptop GPU within a
+$\sim$30\,h budget; we state explicitly what that budget forbade.
+\end{abstract}
