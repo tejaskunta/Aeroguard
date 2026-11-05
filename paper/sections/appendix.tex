@@ -81,7 +81,8 @@ The only touch that could contaminate a claim is \#4, and it is the evaluation t
 paper's detector numbers come from. Touch \#18 is a correction: the original
 seed-1/2 two-stage runs had reused the seed-0 detector, which we detected from
 byte-identical arm-A/arm-B records and corrected by re-running with each seed's
-own checkpoint. No threshold was re-chosen.
+own checkpoint. No threshold was re-chosen on test; the per-seed validation
+selection was rerun for the corrected detector records.
 
 \section{Failure gallery and reproduction commands}
 \label{app:repro}

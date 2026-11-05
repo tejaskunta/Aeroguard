@@ -87,9 +87,11 @@ rate is undefined and the number cannot be compared with anything in this paper.
 On the full clean test set it reaches $0.994$, comfortably above the clean
 model's $0.974$. On the $49$ contamination-free images the two are tied:
 $0.9950$ against $0.9947$ mAP$_{50}$, and $0.725$ against $0.701$ mAP$_{50\text{--}95}$.
-The $49$-image subset is small and the comparison is therefore low-powered, but
-the direction is unambiguous: the apparent $+0.020$ advantage is contamination,
-and the honest estimate of the leak's effect on this corpus is close to zero.
+The $49$-image subset is small and the comparison is therefore low-powered. The
+mAP difference is small on this subset, but the operating-point values are not
+comparable because the two models use different validation-selected confidences;
+we do not infer that leakage has zero effect on deployment behaviour from this
+comparison.
 
 \begin{table}[t]
 \centering

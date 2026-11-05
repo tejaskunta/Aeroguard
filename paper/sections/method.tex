@@ -59,9 +59,10 @@ parameters:
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt]
 \item \textbf{A (deploy).} YOLO at its validation-chosen
 $\mathrm{OP}_{97}$ confidence.
-\item \textbf{B (matched recall).} YOLO at the confidence that matches arm A's
-\emph{validation} recall. This isolates the classifier's contribution from the
-trivial effect of thresholding harder.
+\item \textbf{B (matched recall).} YOLO at the confidence that matches arm C's
+\emph{validation} recall. This compares the two-stage arm with a YOLO-only
+baseline at the same validation recall and isolates the classifier's contribution
+from a trivial threshold change.
 \item \textbf{C (two-stage).} YOLO proposals at a fixed low confidence
 ($0.05$) are routed through the classifier; a proposal is kept if it passes
 either a \emph{protection} rule (detector confidence $\ge P$) or the classifier

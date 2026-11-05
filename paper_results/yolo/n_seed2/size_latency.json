@@ -1,0 +1,11 @@
+{
+  "params": 3005843,
+  "gflops": null,
+  "weights_mb": 5.962985038757324,
+  "latency_ms_median": 6.587300000319374,
+  "latency_ms_p95": 7.231099999444268,
+  "imgsz": 640,
+  "fp": "FP32 PC GPU",
+  "reps": 50,
+  "warmup": 10
+}

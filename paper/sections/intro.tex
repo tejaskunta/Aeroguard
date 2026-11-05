@@ -38,14 +38,14 @@ both, the two are tied at $0.995$ and $0.995$. The leak inflated the number, but
 by less than the folklore predicts---a negative result, and one that would have
 been invisible without the contamination-free subset.
 
-\item \textbf{mAP$_{50}$ saturates before the deployment question is asked.} A
-YOLOv8s detector over three seeds reaches $0.977 \pm 0.003$ test mAP$_{50}$; a
-YOLOv8n detector with $3.7\times$ fewer parameters reaches $0.979$. Ranked by
-mAP, the smaller model is as good or better, at $8.2$ GFLOPs instead of $28.6$.
-Ranked by the recall-first operating point chosen on validation, the smaller model
-produces $6.50$ false positives per image against $1.51$---a $4.3\times$
-difference that no mAP column reveals. The ranking reversal is our headline
-finding, and it is a statement about evaluation, not about architectures.
+\item \textbf{mAP$_{50}$ does not settle the deployment question.} A YOLOv8s
+detector over three seeds reaches $0.977 \pm 0.003$ test mAP$_{50}$; the one
+available YOLOv8n seed reaches $0.979$. Although the n point is slightly higher
+on test, validation mAP favors s ($0.954$ vs. $0.932$), and n has no seed
+interval. At the recall-first operating point chosen on validation, the observed
+n checkpoint produces $6.50$ false positives per image against $1.51$ for s.
+We present this as a case study in threshold transfer and operating-point
+reporting, not as a reliable model-ranking reversal.
 
 \item \textbf{The two-stage gain is detector-dependent, and we can say why.} A
 MobileNetV3-Large classifier over detector crops improves precision over a
@@ -54,9 +54,9 @@ recall-matched single-stage baseline at two of three detector seeds
 At the third seed it is \emph{worse} ($\Delta P = -0.037$, interval
 $[-0.077, +0.013]$). Under a max-$F_2$ rule, a single confidence threshold tuned
 on validation beats the two-stage pipeline outright ($P = 0.976$ vs.\ $0.945$).
-The mechanism is not that the classifier localises better. It is that the
-classifier rescues seeds whose validation-selected threshold transferred poorly
-to test. Where the baseline threshold transfers well, the second stage has
+The pattern is consistent with the classifier helping when the validation-selected
+detector threshold transfers poorly to test, but three seeds do not identify that
+mechanism. Where the baseline threshold transfers well, the second stage has
 nothing to add. Reporting a three-seed mean of $0.879 \pm 0.018$ would have hidden
 this entirely; we report the per-seed structure instead.
 \end{enumerate}
@@ -77,11 +77,14 @@ operational leak definition, a two-method filter with a manually validated MSE
 cut, a frozen manifest, and an accounting of all $30$ removals
 (Section~\ref{sec:audit}).
 \item A direct leaky-versus-clean comparison on a contamination-free subset,
-including the unfavourable result that the leak's effect on mAP$_{50}$ is small
+including the unfavourable result that the mAP difference on a small
+contamination-free subset is small, while threshold-matched operating-point
+effects remain unmeasured
 (Section~\ref{sec:leakvalue}).
 \item An operating-point evaluation protocol---thresholds chosen on validation
 only, applied once to test, with paired image bootstrap and source-cluster
-intervals---and the demonstration that it reverses an mAP-based ranking
+intervals---and a case study showing why a single mAP-based ranking can be
+insufficient
 (Section~\ref{sec:results}).
 \item A per-seed analysis of a two-stage detector-plus-classifier pipeline that
 localises a failure rather than averaging it away, together with a max-$F_2$

@@ -1,0 +1,28 @@
+{
+  "config": {
+    "crops": "paper_results\\stage2\\s2_ratio1_s4\\crops",
+    "ratio": 1.0,
+    "seed": 4,
+    "epochs": 30,
+    "patience": 6,
+    "batch": 64,
+    "lr": 2e-05,
+    "max_pos_per_epoch": 2048
+  },
+  "best_epoch": 15,
+  "best_val_loss": 0.19327703860238635,
+  "val_auc": 0.9926596315829841,
+  "val_f1_at_0.5": 0.8859416445623342,
+  "val_precision_at_0.5": 0.9970149253731343,
+  "val_recall_at_0.5": 0.7971360381861575,
+  "train_crops": {
+    "pos_pool": 11550,
+    "neg_pool": 16205,
+    "pos_per_epoch": 2048,
+    "neg_per_epoch": 2048
+  },
+  "val_crops": {
+    "pos": 419,
+    "neg": 529
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "ultralytics_map": {
+    "val": {
+      "map50": 0.9462578230703497,
+      "map50_95": 0.6045549516459567,
+      "precision_mean": 0.939517399851264,
+      "recall_mean": 0.9268318913001261,
+      "conf_used": 0.001,
+      "imgsz": 640,
+      "nms_iou": 0.7,
+      "max_det": 300
+    }
+  },
+  "at_conf": {
+    "0.1": {
+      "tp": 406,
+      "fp": 278,
+      "fn": 13,
+      "precision": 0.5935672514619883,
+      "recall": 0.9689737470167065,
+      "f2": 0.8601694915254239,
+      "fp_per_image": 1.5359116022099448,
+      "img_accuracy": 1.0,
+      "img_precision": 1.0,
+      "img_recall": 1.0
+    },
+    "0.25": {
+      "tp": 401,
+      "fp": 107,
+      "fn": 18,
+      "precision": 0.7893700787401575,
+      "recall": 0.9570405727923628,
+      "f2": 0.9180402930402931,
+      "fp_per_image": 0.5911602209944752,
+      "img_accuracy": 1.0,
+      "img_precision": 1.0,
+      "img_recall": 1.0
+    }
+  },
+  "recall_first_ops": {
+    "best": {
+      "0.95": 0.13,
+      "0.97": -0.0,
+      "0.98": -0.0
+    },
+    "last": {
+      "0.95": 0.385,
+      "0.97": 0.045,
+      "0.98": -0.0
+    }
+  },
+  "checkpoint_choice": {
+    "chosen": "last",
+    "rule": "val recall>=0.97 then max precision",
+    "best": {
+      "op_conf": -0.0,
+      "val_precision": 0.034715769912999406,
+      "val_recall": 0.9809069212410502,
+      "val_fp_per_image": 63.13812154696133
+    },
+    "last": {
+      "op_conf": 0.045,
+      "val_precision": 0.4329787234042553,
+      "val_recall": 0.9713603818615751,
+      "val_fp_per_image": 2.9447513812154695
+    },
+    "primary_op_conf": 0.045
+  },
+  "image_level_at_op": {
+    "confusion": {
+      "tp": 174,
+      "fp": 1,
+      "fn": 0,
+      "tn": 6
+    },
+    "accuracy": 0.994475138121547,
+    "balanced_accuracy": 0.9285714285714286,
+    "kappa": 0.9202291758483915,
+    "precision": 0.9942857142857143,
+    "recall": 1.0
+  }
+}

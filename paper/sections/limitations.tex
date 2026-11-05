@@ -12,6 +12,11 @@ than presenting a contaminated point.
 \item \textbf{Single seed for the small model.} The \texttt{yolov8n} row has no
 interval. Its mAP advantage over \texttt{yolov8s} is within the latter's seed
 spread, and we do not claim it is a better detector.
+\item \textbf{Unresolved operating-point and leak checks.} We did not train n
+seeds 1--2, sweep recall targets and FP budgets, bootstrap threshold selection,
+or threshold-match the leaky and clean models. The leak count is also based on
+the operational filter; an independent embedding-neighbour check remains future
+work.
 \item \textbf{Five negative test images.} Precision and FP/image are
 high-variance; the source-cluster intervals span an order of magnitude. Point
 estimates in tables are accompanied by intervals wherever the interval is

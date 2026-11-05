@@ -1,10 +1,13 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Report the operating point, then the curve.} The size sweep is the
-cleanest demonstration we have that mAP and deployment behaviour are different
-measurements. \texttt{yolov8n} and \texttt{yolov8s} are indistinguishable on test
-mAP$_{50}$ and differ by $4.3\times$ in false alarms at the recall-first point.
+\paragraph{Report the operating point, then the curve.} The size sweep is a
+case study showing that mAP and deployment behaviour are different measurements.
+The one available \texttt{yolov8n} checkpoint and three \texttt{yolov8s} seeds
+are close on test mAP, but validation mAP favors s and the n estimate has no
+seed interval. They differ by $4.3\times$ in false alarms at the recall-first
+point, so the result should motivate a threshold-rule sweep rather than a model
+ranking claim.
 The mechanism is not mysterious: mAP integrates over confidence, and a model can
 rank detections well while being badly calibrated near the threshold a user will
 pick. The recommendation is concrete and cheap. Report, at minimum: the
@@ -17,8 +20,9 @@ thresholds of $0.02$, $0.01$, and $0.21$ for the same architecture, same data,
 same schedule. That is not a bug in the search; it is what happens when a
 validation set has $181$ images and $7$ negatives. The consequence is that
 ``model precision'' pooled over seeds is mostly a statement about which
-threshold each seed happened to pick. This also explains the two-stage result:
-the classifier looks valuable exactly where the threshold transferred badly.
+threshold each seed happened to pick. This is consistent with the two-stage
+result: the classifier looks valuable exactly where the threshold transferred
+badly, but the current three seeds do not identify that as a mechanism.
 Any ablation that changes a component downstream of a fragile threshold will
 inherit that fragility, and a single pooled mean will hide it.
 
@@ -40,11 +44,10 @@ $0.002$ or by $0.2$. Here it is $0.0003$ on the comparable subset. We would not
 have known that from the audit alone, and we would have been tempted to describe
 the leak as catastrophic.
 
-\paragraph{What the saliency audit bought.} Two things. First, it independently
-confirmed the two wrong labels, which is a useful cross-check on a manual
-review. Second, it showed that a $97.4\%$-accurate image classifier has almost no
-object-localised evidence. Without that measurement we might have described the
-MNv3 baseline as ``weak but reasonable''; with it, we can say it is exploiting
-context, which is a different and more useful statement. Attribution did not
-prove any prediction correct, and we have tried to keep every sentence on the
-correct side of that line.
+\paragraph{What the saliency audit bought.} It provided a consistency check for
+the two manually identified labels and showed that the image-level baseline has
+weak object-localised evidence. The baseline is degenerate on negatives, and the
+crop enrichment is constrained by the $20\%$ padding geometry, so neither result
+establishes context exploitation. Attribution did not prove any prediction
+correct, and the revised interpretation keeps it as a sanity check rather than a
+mechanistic explanation.

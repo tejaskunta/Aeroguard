@@ -34,17 +34,15 @@ yolov8n & 3.0\,M & 8.2 & 6.0 & 6.9 & 0.9322 & 0.9787 & 0.9842 & 0.1686 & 6.497 \
 \end{table}
 
 The operating-point columns are not flat at all. At the recall-first point the
-smaller detector emits \fpn\ false positives per image against \fps\ for the
-larger one---a $4.3\times$ difference, and notice the direction: the model with
-fewer parameters is \emph{worse} at deployment while being equal or better on
-mAP. Its precision at that point is $0.169$ against $0.516$. The mAP$_{50}$ of
-$0.979$ is earned by ranking, not by calibration, and at a fixed high-recall
-threshold the ranking advantage evaporates.
+observed n checkpoint emits \fpn\ false positives per image against \fps\ for the
+s checkpoint---a $4.3\times$ difference. Its precision at that point is $0.169$
+against $0.516$. This is an example of why a deployment-oriented evaluation
+should report threshold selection and false alarms alongside mAP, not evidence
+that n is generally worse or that the ranking reverses across model families.
 
-This is the paper's central empirical claim, and it is a claim about evaluation.
-A benchmark that reports only mAP$_{50}$ would rank \texttt{yolov8n} first and
-recommend it for a $8.2$\,GFLOP budget; a deployment engineer would get a
-detector emitting four times as many alarms per frame. We note one more
+The comparison remains exploratory: n has one seed, its validation mAP is lower,
+and the validation composition differs from test. We therefore do not recommend
+a model from this single operating-point comparison. We note one more
 inconvenient detail: measured latency does not favour the smaller model
 ($6.9$ vs.\ $6.5$\,ms), because at this size the fixed per-image overhead
 dominates. The GFLOP and parameter savings are real, the wall-clock saving on
@@ -196,7 +194,7 @@ The per-seed structure is not a clean win.
 \small
 \caption{Two-stage ablation on test, mean $\pm$ std over detector seeds
 $0/1/2$ (arm thresholds in the second column). Arm A is YOLO at its deploy
-threshold; B is YOLO at the confidence matching arm A's validation recall; C adds
+threshold; B is YOLO at the confidence matching arm C's validation recall; C adds
 the classifier with protection $P=0.4$.}
 \label{tab:twostage}
 \setlength{\tabcolsep}{3.5pt}
@@ -279,7 +277,8 @@ negatives is the largest single degradation
 ($\Delta P = -0.056\ [-0.084, -0.028]$), which is unsurprising given that the
 negatives are detector false positives rather than random background. Removing
 context padding ($0.0$) costs $0.027$ precision, and doubling it ($0.4$) costs
-$0.025$: the $20\%$ margin is a genuine optimum rather than a monotone knob.
+$0.025$: among the three padding values tried, $20\%$ is the best observed value;
+this does not establish a general optimum.
 Reducing crop resolution to $160$ \emph{improves} precision by $0.017$ with an
 interval that touches zero $[0.000, 0.036]$, a difference we do not claim.
 Doubling to $320$ costs $0.025$. All intervals are paired image bootstraps
@@ -314,25 +313,25 @@ where it is uninformative. On $244$ true-positive detections, the median share o
 CAM energy inside the ground-truth box is $0.939$ (mean $0.690$, first quartile
 $0.0002$, third quartile $0.996$). Median enrichment over the box's area share is
 $58.2\times$; the peak falls inside the box for $73.0\%$ of detections. The
-bimodality is important: the distribution is not centred on a high value, it is
-split between detections whose evidence is almost entirely on the object and
-detections whose evidence is almost entirely elsewhere. The second group is
-where the detector is right for the wrong reason.
+distribution is heterogeneous, but the current E1 implementation targets a
+single top anchor per image. In multi-object images this can assign zero energy
+to annotated objects that were not the selected anchor. We therefore treat the
+distribution as descriptive and do not interpret the low-energy group as
+evidence that detections are right for the wrong reason.
 
 Deletion tests confirm the direction. Masking the ground-truth box lowers the
 detection score by $0.739$ on average ($n=182$); masking a matched background
 region lowers it by $0.0015$. The detector's score depends on the object region,
 as it should.
 
-The head-to-head comparison is the cautionary result. On images where both the
-detector and the image-level classifier are correct, detector enrichment has
+The head-to-head comparison is suggestive but not causal. On images where both
+the detector and the image-level classifier are correct, detector enrichment has
 median $86.0\times$ and the MobileNetV3 baseline has median $1.82\times$; the
 paired difference is $+147.0\ [125.4, 170.0]$ in favour of the detector. On
-detector crops, the stage-2 classifier reaches only $2.13\times$. The classifier
-that achieves $97.4\%$ image-level accuracy is not looking at the object in any
-localised sense; it is exploiting context. That does not make its decisions wrong
-on this test set, but it explains why fine-tuning it adds so little precision and
-why its gains vanish when the baseline threshold is already good.
+detector crops, the stage-2 classifier reaches $2.13\times$. With $20\%$ crop
+padding, enrichment is strongly constrained by crop geometry, and the image-level
+baseline is degenerate on negatives ($\kappa\approx0$). These measurements do
+not establish context exploitation or explain the two-stage effect.
 
 \begin{figure}[t]
 \centering

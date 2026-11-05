@@ -1,0 +1,83 @@
+{
+  "stage1": {
+    "tp": 410,
+    "fp": 395,
+    "fn": 9,
+    "precision": 0.5093167701863354,
+    "recall": 0.9785202863961814,
+    "f2": 0.8262797259169689,
+    "fp_per_image": 2.18232044198895,
+    "img_tp": 173,
+    "img_fp": 1,
+    "img_fn": 1,
+    "img_tn": 6,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9942528735632183,
+    "img_accuracy": 0.988950276243094
+  },
+  "chosen": {
+    "P": 0.8,
+    "tau": 0.03,
+    "recall": 0.9737470167064439,
+    "precision": 0.608955223880597,
+    "fp_per_image": 1.4475138121546962,
+    "img_recall": 0.9942528735632183,
+    "recall_drop": 0.004773269689737458
+  },
+  "chosen_effective": {
+    "yolo_conf": 0.05,
+    "cls_thr": 0.03,
+    "protect_conf": 0.8
+  },
+  "arm_a_conf": 0.125,
+  "arm_b_conf": 0.125,
+  "ms_per_image": 39.11566207422077,
+  "val_at_chosen": {
+    "tp": 408,
+    "fp": 262,
+    "fn": 11,
+    "precision": 0.608955223880597,
+    "recall": 0.9737470167064439,
+    "f2": 0.8695652173913043,
+    "fp_per_image": 1.4475138121546962,
+    "img_tp": 173,
+    "img_fp": 1,
+    "img_fn": 1,
+    "img_tn": 6,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 0.9942528735632183,
+    "img_accuracy": 0.988950276243094
+  },
+  "val_at_arm_a": {
+    "tp": 408,
+    "fp": 173,
+    "fn": 11,
+    "precision": 0.7022375215146299,
+    "recall": 0.9737470167064439,
+    "f2": 0.9038546743464777,
+    "fp_per_image": 0.9558011049723757,
+    "img_tp": 173,
+    "img_fp": 0,
+    "img_fn": 1,
+    "img_tn": 7,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 1.0,
+    "img_accuracy": 0.994475138121547
+  },
+  "val_at_arm_b": {
+    "tp": 408,
+    "fp": 173,
+    "fn": 11,
+    "precision": 0.7022375215146299,
+    "recall": 0.9737470167064439,
+    "f2": 0.9038546743464777,
+    "fp_per_image": 0.9558011049723757,
+    "img_tp": 173,
+    "img_fp": 0,
+    "img_fn": 1,
+    "img_tn": 7,
+    "img_recall": 0.9942528735632183,
+    "img_precision": 1.0,
+    "img_accuracy": 0.994475138121547
+  }
+}

@@ -22,22 +22,21 @@ exact duplicate, no base-key collision, and no confirmed near-duplicate leak.
 Second, we measure what the leak was worth. A detector trained on the leaky split
 scores $0.994$ mAP$_{50}$ on the full clean test set against $0.974$ for a
 clean-trained model, but on the $49$ contamination-free test images the two are
-tied ($0.995$ vs.\ $0.995$). The apparent inflation is therefore contamination,
-not capability---and it is small, a negative result we report rather than bury.
+tied ($0.995$ vs.\ $0.995$). This shows a small mAP difference on the
+contamination-free subset, but the operating points were not threshold-matched,
+so we do not infer that leakage has zero effect on deployment behaviour.
 
 We then evaluate a MobileNetV3-Large second stage over detector crops on three
-detector seeds. The two-stage arm improves precision over a recall-matched
-single-stage baseline at two of three seeds ($\Delta P = +0.128$ and $+0.144$,
+detector seeds. The two-stage arm improves precision over a baseline matched to
+the two-stage validation recall at two of three seeds ($\Delta P = +0.128$ and
+$+0.144$,
 bootstrap intervals excluding zero) but fails at the third
 ($\Delta P = -0.037$, interval $[-0.077, +0.013]$). Under a max-$F_2$ rule a
 val-tuned single-stage threshold beats the two-stage pipeline outright
-($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent rather
-than architectural, and we identify the mechanism: the two-stage gain comes from
-rescuing seeds whose val-selected threshold transferred poorly, not from better
-localisation. Grad-CAM confirms that the detector's evidence lies on the objects
-(median $58\times$ energy enrichment over chance) and that the second stage adds
-almost no spatial evidence of its own ($1.82\times$ for the image-level baseline,
-$2.13\times$ for crops)---a caution against reading a classifier's accuracy as
-reasoning. All experiments were run on one 8\,GB laptop GPU within a
+($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent and
+interpret the threshold-transfer explanation as a hypothesis consistent with
+these three seeds, not as an identified mechanism. The Grad-CAM results are
+descriptive evidence rather than proof of correctness or context use. All
+experiments were run on one 8\,GB laptop GPU within a
 $\sim$30\,h budget; we state explicitly what that budget forbade.
 \end{abstract}
