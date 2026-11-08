@@ -50,11 +50,12 @@ indicators only** — buried objects are invisible to the camera (design constra
 >
 > The two projects are **different things**: AeroGuard (this repo) is the
 > detection research paper; AeroShield is the deployment system built on top of
-> it. Note that AeroShield's Jetson measurements were taken with a **3-class**
-> detector (`landmine_metal`, `landmine_plastic`, `debris_negative`), whereas the
-> detector evaluated in `paper/` is **single-class** (`Landmine`). Edge latencies
-> are therefore not interchangeable between the two and must not be quoted as
-> validating the paper's model.
+> it. Both serve the **same single-class** model (`Landmine`); AeroShield's
+> `jetson/` layer exports this repo's `best.pt` to ONNX, builds a TensorRT engine
+> on the Nano, and runs it. The only three-class labelling anywhere is
+> `configs/data.yaml.example`, which is an unedited template, and the default
+> label list of `MockDetector` (the GPU-less pipeline test double) — **not** the
+> deployed detector.
 
 Every script resolves the repo root from `Path(__file__)`, so all commands below
 run from the repository root regardless of where the script lives.
