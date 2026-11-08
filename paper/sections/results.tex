@@ -447,7 +447,23 @@ detections is that the median share of CAM energy inside the ground-truth box is
 $0.939$ (mean $0.690$, first quartile $0.0002$, third quartile $0.996$), median
 enrichment over the box's area share is $58.2\times$, and the peak falls inside the
 box for $73.0\%$ of detections. That aggregate is misleading on its own, and we
-do not report it on its own for the rest of this section.
+do not report it on its own for the rest of this section. Figure~\ref{fig:energyhist}
+shows the distribution it summarises, and why a median is the wrong summary for
+it.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.86\linewidth]{figs/energy_in_box_hist.png}
+\caption{The distribution behind the aggregate in the text, shown because the
+aggregate hides it. Left: share of CAM energy falling inside the ground-truth
+box, $n=244$ true-positive detections. Right: enrichment, the energy share
+divided by the box's share of the image area, clipped at $20\times$ for display.
+The distribution is strongly bimodal, and the low mode is populated entirely by
+detections on multi-object frames, where E1 attributes every detection on an
+image to one CAM. We show the histogram rather than only the median because the
+median ($0.939$) sits between the two modes and describes neither.}
+\label{fig:energyhist}
+\end{figure*}
 
 Stratifying the same detections by how many ground-truth boxes the image contains
 changes the picture completely. The test split has $172$ single-object images and

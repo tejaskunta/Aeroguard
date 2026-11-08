@@ -6,13 +6,28 @@
 The first audit pass over the pooled corpus returned a clear failure. Of the
 evaluation images, $63.8\%$ had a training image within perceptual-hash Hamming
 distance $2$, and $76$ Roboflow base names appeared in more than one split
-(train$\cap$valid $37$, train$\cap$test $31$, valid$\cap$test $10$). A montage
-of the base-name collisions shows the same physical scene, the same mine
-placement, and different export bytes: these are re-exports, not distinct
-photographs. The mechanism is augmentation before splitting, present in the
-upstream generation scripts. The test split also contained zero negative images,
-so false-alarm rate was undefined. We therefore discarded the split entirely
-rather than attempting to patch it.
+(train$\cap$valid $37$, train$\cap$test $31$, valid$\cap$test $10$). The
+mechanism is augmentation before splitting, present in the upstream generation
+scripts. The test split also contained zero negative images, so false-alarm rate
+was undefined. Figure~\ref{fig:leak} is the evidence for the stronger of the two
+findings, and we describe what it shows rather than asking the reader to accept
+an aggregate.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figs/base_key_collisions_test_train.jpg}
+\caption{Base-key collisions between the test and train splits of the original
+corpus, drawn from the first audit pass. Each pair is one test image (left) and
+the train image (right) that shares its Roboflow base name, i.e. the same source
+file re-exported into both splits. The pairs are the same physical scene: the
+same mine placement, terrain texture and shadow, differing only in crop,
+colour jitter and export bytes. These are re-exports, not distinct photographs,
+and no threshold choice is involved in exhibiting them. Twenty of the $76$
+colliding base names are shown.}
+\label{fig:leak}
+\end{figure*}
+
+We therefore discarded the split entirely rather than attempting to patch it.
 
 \subsection{Operational leak definition}
 

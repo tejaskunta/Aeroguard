@@ -91,6 +91,25 @@ classifier's crop evidence is useful. The rule's weakness is the opposite case:
 a high $P$ with a very low $\tau$ leaves almost every proposal protected, so the
 classifier is present but inert while still satisfying the recall constraint.
 
+Figure~\ref{fig:pipeline} shows the three arms as data flow. Arms A and B are
+scoring rules applied to the same detector run; only arm C adds parameters. The
+protection branch is a bypass around the classifier, not a gate in front of it,
+which is why a high $P$ can make arm C collapse into arm A without changing any
+classifier weight.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.88\linewidth]{figs/pipeline.png}
+\caption{The two-stage pipeline as data flow. The detector proposes at a low
+confidence ($0.05$); a proposal either bypasses the classifier when its detector
+confidence is at least the protection threshold $P$, or is scored by the
+MobileNetV3-Large crop classifier and compared against $\tau$. Both $P$ and
+$\tau$ are chosen on validation. Arms A and B are the same detector run scored by
+a single confidence, so the schematic differs between arms only in where the
+final comparison happens, not in the features computed.}
+\label{fig:pipeline}
+\end{figure*}
+
 \subsection{Statistics}
 
 All test comparisons use the same $189$ images, so we resample images, not

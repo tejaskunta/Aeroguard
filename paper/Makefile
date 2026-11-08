@@ -3,7 +3,7 @@ BIB   = bibtex
 
 all: main.pdf
 
-main.pdf: main.tex $(wildcard sections/*.tex) refs.bib $(wildcard figs/*.png)
+main.pdf: main.tex $(wildcard sections/*.tex) refs.bib $(wildcard figs/*.png) $(wildcard figs/*.jpg)
 	$(LATEX) main.tex
 	$(BIB) main
 	$(LATEX) main.tex
