@@ -8,7 +8,7 @@ We use Ultralytics YOLOv8 \citep{jocher2023ultralytics} at two depths,
 initialised from COCO-pretrained weights and fine-tuned for $75$ epochs at
 $640\times640$, batch $8$, with the Ultralytics default augmentation recipe and
 early-stopping patience $20$. The \texttt{s} model is trained with seeds
-$0,1,2$; the \texttt{n} model with seed $0$ only, as a single size point. All
+$0,1,2,3,4$; the \texttt{n} model with seeds $0,1,2$, as a smaller size point. All
 runs use the same pinned stack (Ultralytics 8.4.117, PyTorch 2.6.0+cu124) on one
 RTX~4070 Laptop GPU with $8$\,GB of memory.
 

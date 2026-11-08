@@ -39,7 +39,7 @@ batch size ($\kappa \approx 0$); only fine-tuning the last layers separates them
 Stage A rows retained as the mandated ablation. \\
 D021 & Threshold rule: sweep protection $P$, choose the largest $\tau$ within
 $0.5$ points of stage-1 validation recall, then minimise validation FP/image.
-All seeds select $P=0.4$. \\
+Four of five seeds select $P=0.4$; seed $4$ selects $P=0.8$. \\
 D022 & Grad-CAM flags images by energy in the union of all ground-truth boxes,
 not per detection; per-detection rows were an instance-count artefact on
 multi-mine frames. \\
@@ -101,7 +101,7 @@ The false-positive contact sheet is reproduced in Figure~\ref{fig:failures}. The
 full false-negative gallery, the audit montages, the per-image predictions, and
 the Grad-CAM heatmaps are in the repository under \texttt{paper\_results/}.
 
-\begin{figure*}[t]
+\begin{table*}[t]
 \begin{verbatim}
 # tables T1-T6 and figures (no GPU, no dataset required)
 python src/reporting/make_tables.py
@@ -116,7 +116,7 @@ python src/pipeline/phase5_pipeline.py --yolo <seed_best.pt> \
 # statistical analysis, bootstrap and policy rules
 python src/analysis/analysis_stats.py
 \end{verbatim}
-\end{figure*}
+\end{table*}
 
 Environment: Python 3.11.9, Ultralytics 8.4.117, PyTorch 2.6.0+cu124,
 torchvision 0.21.0+cu124, NVIDIA RTX~4070 Laptop (8\,GB). Evaluation at

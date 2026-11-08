@@ -4,8 +4,8 @@ mean average precision (mAP). We show that on a small, single-class landmine
 surface-indicator dataset this ranking is uninformative for deployment: a
 3.0\,M-parameter detector and an 11.1\,M-parameter detector differ by less than
 the seed-to-seed spread in test mAP$_{50}$ ($0.979$ vs.\ $0.977 \pm 0.003$), yet their
-recall-first operating points differ by a factor of $4.3$ in false positives per
-image ($6.50$ vs.\ $1.51$). We argue that the meaningful object of study is the
+recall-first operating points differ by a factor of \fpct{} in false positives
+per image (\fpn\ vs.\ \fps). We argue that the meaningful object of study is the
 operating point, not the summary curve, and we build the evaluation protocol
 around that claim.
 
@@ -34,8 +34,9 @@ at the fourth ($\Delta P = -0.037$, interval $[-0.077, +0.013]$), and is
 \emph{worse} at the fifth ($\Delta P = -0.049$, interval $[-0.091, -0.002]$). A
 confidence interval over the five per-seed paired differences spans zero
 ($+0.062\ [-0.058, +0.182]$), so we do not claim a mean improvement. Under a
-max-$F_2$ rule a val-tuned single-stage threshold beats the two-stage pipeline
-outright ($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent
+max-$F_2$ rule a val-tuned single-stage threshold reaches the same $F_2$ with
+higher precision and fewer false alarms ($P = 0.976$ vs.\ $0.945$). We report
+the effect as detector-dependent
 and interpret the threshold-transfer explanation as a hypothesis consistent with
 these five seeds, not as an identified mechanism; the seed that regresses is
 traced to a validation-only selection rule choosing a near-inert classifier, not

@@ -20,10 +20,11 @@ under AGPL-3.0, which requires derivative services to publish their source; this
 is a licence choice, not an ethical safeguard.
 
 \paragraph{The cost of the miss rate.} At the primary operating point the
-two-stage arm recalls $0.964$ of annotated instances, which on this test set means
-nine missed objects out of $253$. Those nine are analysed in
+two-stage arm recalls $0.968 \pm 0.003$ of annotated instances over the five
+detector seeds ($0.964$ at seed~$0$, the run whose failures we analyse), which on
+this test set means nine missed objects out of $253$. Those nine are analysed in
 Table~\ref{tab:failures}: five are camouflaged or low-contrast, two are small
-objects, and two are the objectively wrong labels removed under D023. A
+objects, and two are the objectively wrong labels removed under D023. At seed~$0$ a
 pre-correction recall of $0.964$ reads as a good number in a table; after the
 two label corrections, the corresponding value is $0.972$. In a clearance context it
 means that roughly one in twenty-eight annotated objects is not flagged, and the
