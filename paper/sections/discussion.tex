@@ -32,10 +32,14 @@ classifier is defensible if the requirement is recall $\ge 0.96$ with minimum
 false alarms, and if the detector's threshold is known to be unreliable. It is
 not defensible as a general precision improvement, because a tuned single-stage
 threshold beats it at max-$F_2$, and its benefit disappears at the seed whose
-threshold transferred well. The cost is real: $16.0$\,ms per image end to end and
-$3.06$ crops per image on average (95th percentile $3.6$). For a pipeline that
-processes every frame of a flight, that is a meaningful multiplier for a gain
-that is conditional.
+threshold transferred well. The cost is real and it is not a rounding error:
+$16.5 \pm 1.4$\,ms per image end to end against $6.5$\,ms for the single stage,
+with $2.8 \pm 0.6$ crops scored per image and a 95th percentile of $5.3$
+(Table~\ref{tab:cost}). For a pipeline that processes every frame of a flight,
+that is a $2.5\times$ multiplier bought for a gain that is conditional on the
+detector's threshold being unreliable. A deployment decision here is not
+``which model is more accurate'' but ``how many false alarms is worth $2.5\times$
+the frame budget'', and only the second question has an operational answer.
 
 \paragraph{Leakage is worth measuring, not just fixing.} The contamination-free
 comparison is a negative result, and we think negative results of this kind

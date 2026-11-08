@@ -374,6 +374,57 @@ The narrower, defensible role for the classifier is the strict high-recall regim
 classifier's, and terrain-nuisance rejection. It is not a general-purpose
 improvement, and we say so.
 
+\subsection{Cost of the second stage}
+\label{sec:cost}
+
+The precision comparison above is silent on what the second stage costs, and the
+cost is not uniform across seeds. Table~\ref{tab:cost} reports the measured
+end-to-end time per image for the two-stage arm, from the same frozen test pass
+that produced Table~\ref{tab:twostage}. Each figure is wall-clock over the whole
+test split on one 8\,GB laptop GPU, divided by image count, and covers stage-1
+proposal generation, square-crop extraction with $20\%$ context, and MobileNetV3
+scoring of every proposal. It is therefore a like-for-like successor to the
+$6.5$\,ms single-stage row of Table~\ref{tab:size}, measured on the same machine.
+
+\begin{table}[t]
+\centering
+\caption{Measured end-to-end cost of the two-stage arm, per detector seed. Each
+value is wall-clock time on the full test split divided by image count, and
+includes proposal generation, crop extraction and classifier scoring at a
+low proposal threshold, so it is an upper bound on deployed cost.
+``Crops'' counts proposals reaching the classifier. PC GPU FP32,
+$640\times640$ input, $224\times224$ crops.}
+\label{tab:cost}
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+seed & ms/img & crops/img & crops p95 \\
+\midrule
+0 & $16.01$ & $3.06$ & $3.6$ \\
+1 & $17.83$ & $3.69$ & $6.0$ \\
+2 & $18.09$ & $2.76$ & $4.8$ \\
+3 & $15.50$ & $2.34$ & $6.6$ \\
+4 & $15.19$ & $2.35$ & $5.6$ \\
+\midrule
+mean & $16.5 \pm 1.4$ & $2.8 \pm 0.6$ & $5.3 \pm 1.4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three things follow. First, the second stage costs roughly $2.5\times$ the
+single-stage detector ($16.5$ against $6.5$\,ms), and unlike the model-size
+comparison in Section~\ref{sec:size} this ordering is stable: every seed is
+slower than the single stage, and the seed-to-seed spread ($1.4$\,ms) is small
+relative to the penalty ($10$\,ms). Second, the cost tracks proposal count rather
+than any model property, which is why the two seeds with the lowest crop counts
+(3 and 4, at $2.34$ and $2.35$) are also the two fastest; nothing about the
+classifier's accuracy predicts its cost. Third, the tail is worse than the mean:
+the 95th percentile of crops per image is $5.3$ across seeds against $3.6$ at
+seed 0 alone, so a number quoted from one seed understates exactly the frames
+that matter for a fixed-rate pipeline. Cost is a property of the whole
+detector--classifier configuration, and it must be reported per seed like every
+other quantity here.
+
 A final caveat on the unit of replication. The five seeds are not five fully
 independent end-to-end systems. Seeds 0, 1 and 2 train their stage-2 classifier
 on the same crop set, generated once from the seed-0 detector
