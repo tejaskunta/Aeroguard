@@ -26,17 +26,21 @@ tied ($0.995$ vs.\ $0.995$). This shows a small mAP difference on the
 contamination-free subset, but the operating points were not threshold-matched,
 so we do not infer that leakage has zero effect on deployment behaviour.
 
-We then evaluate a MobileNetV3-Large second stage over detector crops on three
+We then evaluate a MobileNetV3-Large second stage over detector crops on five
 detector seeds. The two-stage arm improves precision over a baseline matched to
-the two-stage validation recall at two of three seeds ($\Delta P = +0.128$ and
-$+0.144$,
-bootstrap intervals excluding zero) but fails at the third
-($\Delta P = -0.037$, interval $[-0.077, +0.013]$). Under a max-$F_2$ rule a
-val-tuned single-stage threshold beats the two-stage pipeline outright
-($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent and
-interpret the threshold-transfer explanation as a hypothesis consistent with
-these three seeds, not as an identified mechanism. The Grad-CAM results are
-descriptive evidence rather than proof of correctness or context use. All
-experiments were run on one 8\,GB laptop GPU within a
-$\sim$30\,h budget; we state explicitly what that budget forbade.
+the two-stage validation recall at three of five seeds ($\Delta P = +0.128$,
+$+0.144$ and $+0.126$, bootstrap intervals excluding zero), is indistinguishable
+at the fourth ($\Delta P = -0.037$, interval $[-0.077, +0.013]$), and is
+\emph{worse} at the fifth ($\Delta P = -0.049$, interval $[-0.091, -0.002]$). A
+confidence interval over the five per-seed paired differences spans zero
+($+0.062\ [-0.058, +0.182]$), so we do not claim a mean improvement. Under a
+max-$F_2$ rule a val-tuned single-stage threshold beats the two-stage pipeline
+outright ($P = 0.976$ vs.\ $0.945$). We report the effect as detector-dependent
+and interpret the threshold-transfer explanation as a hypothesis consistent with
+these five seeds, not as an identified mechanism; the seed that regresses is
+traced to a validation-only selection rule choosing a near-inert classifier, not
+to a classifier failure. The Grad-CAM results are descriptive evidence rather
+than proof of correctness or context use. All experiments were run on one 8\,GB
+laptop GPU within a $\sim$30\,h budget; we state explicitly what that budget
+forbade.
 \end{abstract}

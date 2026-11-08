@@ -41,16 +41,23 @@ for comparability with the literature. It plays no role in any selection.
 \subsection{Two-stage pipeline}
 
 The second stage is a MobileNetV3-Large classifier \citep{howard2019mobilenetv3}
-applied to detector crops. Each detection box is expanded by $20\%$ on each side,
-cropped, and resized to $224\times224$; the classifier outputs a single sigmoid
-score. Training crops are $11{,}550$ positives and $15{,}411$ negatives, the
+applied to detector crops. We keep the torchvision
+\texttt{mobilenet\_v3\_large} convolutional trunk with ImageNet weights and
+replace the classification head with a $128$-unit bottleneck (global average
+pool, linear $128$ with ReLU, dropout $0.3$, linear $1$), yielding
+$3{,}119{,}535$ parameters in total. Each detection box is expanded by $20\%$ on
+each side, cropped, and resized to $224\times224$; the classifier outputs a single
+sigmoid score. Training crops are $11{,}550$ positives and $15{,}411$ negatives, the
 latter comprising random background, $3{,}730$ detector false positives mined at
 confidence $0.05$ from an epoch-20 checkpoint, and $20$ empty-frame samples.
 Positives and negatives are sampled $1{:}1$ per epoch; the classifier is
-fine-tuned end-to-end for $30$ epochs at learning rate $2\times10^{-5}$ with
-per-sample class weights $[97.7, 0.50]$ to compensate the $3{,}887{:}20$
-image-level imbalance. The $1{:}1$ ratio and the unfrozen-late-layers recipe were
-chosen on validation, and a five-variant ablation is reported in
+fine-tuned end-to-end for $30$ epochs at learning rate $2\times10^{-5}$ with an
+unweighted binary cross-entropy loss. No class weighting is needed here, because
+the $1{:}1$ crop sampling already balances the batch; this is the opposite of the
+image-level baseline, which is trained on the raw $3{,}887{:}20$ positive-negative
+split and therefore requires per-sample weights $[97.7, 0.50]$
+(Section~\ref{sec:imagelevel}). The $1{:}1$ ratio and the unfrozen-late-layers
+recipe were chosen on validation, and a five-variant ablation is reported in
 Section~\ref{sec:ablation}.
 
 We compare three arms, all evaluated on test exactly once with validation-frozen
@@ -69,15 +76,20 @@ either a \emph{protection} rule (detector confidence $\ge P$) or the classifier
 threshold $\tau$. $P$ is swept over $\{0.4, 0.6, 0.8, \infty\}$ on validation;
 for each $P$ we take the largest $\tau$ whose validation recall is within $0.5$
 points of stage-1 recall, then choose the pair with the lowest validation
-FP/image. All three seeds select $P=0.4$, with
-$\tau = 0.27 / 0.23 / 0.22$ for seeds $0/1/2$.
+FP/image. Four of the five seeds select $P=0.4$, with
+$\tau = 0.27 / 0.23 / 0.22 / 0.13$ for seeds $0/1/2/3$. Seed $4$ selects $P=0.8$
+with $\tau = 0.03$, the one place where the rule leaves the $P=0.4$ regime;
+Section~\ref{sec:twostage} shows that this choice is what makes arm C regress at
+that seed, and we report it rather than overriding it.
 \end{itemize}
 
 The protection rule matters. Without it the classifier can veto a
 high-confidence detection, and on this corpus that costs recall on the
 multi-object \texttt{Jan} source. With $P=0.4$ the pipeline is allowed to
 suppress only low-confidence proposals, which is the regime where the
-classifier's crop evidence is useful.
+classifier's crop evidence is useful. The rule's weakness is the opposite case:
+a high $P$ with a very low $\tau$ leaves almost every proposal protected, so the
+classifier is present but inert while still satisfying the recall constraint.
 
 \subsection{Statistics}
 

@@ -17,6 +17,10 @@ released as a CSV with the following SHA-256 digest:
 \paragraph{Weights.} Three detector seeds are released, each with
 \texttt{best.pt}, \texttt{last.pt} and an ONNX export, plus three stage-2
 checkpoints and the original v1 run for reference, all with a SHA-256 manifest.
+The seed-3/4 \texttt{yolov8s} and seed-0--2 \texttt{yolov8n} runs discussed in
+Section~\ref{sec:results} were trained on the same frozen split under the same
+schedule; their evaluation JSONs are committed so every number in this paper is
+reproducible, but their weight files are not part of the released tree.
 The detector checkpoints are derivative works of Ultralytics YOLOv8 and are
 distributed under \textbf{AGPL-3.0}; the stage-2 checkpoints are fine-tuned
 torchvision MobileNetV3-Large and are distributed under the same repository

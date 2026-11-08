@@ -85,7 +85,11 @@ paper/*.synctex.gz
 
 # --- research artifacts: reproducible / transient ------------------------
 # stage-2 crop images (regenerate with phase5_build_crops.py)
-paper_results/stage2/crops/**/*.jpg
+# `**` covers both the shared seed-0 set (paper_results/stage2/crops/) and the
+# per-seed sets that detector seeds 3 and 4 generate from their own stage-1
+# checkpoints (paper_results/stage2/s2_ratio1_s3/crops/, ...). Manifests and
+# stats.json stay tracked so every crop set is auditable without its JPEGs.
+paper_results/stage2/**/crops/**/*.jpg
 paper_results/ablation/*/crops/**/*.jpg
 paper_results/ablation/*/crops/manifest.csv
 # contamination-free subset images (regenerate with make_leaky_vs_clean.py)

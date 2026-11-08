@@ -52,7 +52,8 @@ before/after; do not retrain (no training-label errors found). \\
 \section{Test-touch accounting}
 \label{app:touches}
 
-Eighteen numbered test touches were logged. Grouped by purpose:
+Eighteen numbered test touches were logged during the original run; a further
+seven were logged during the extended analysis. Grouped by purpose:
 
 \begin{table}[H]
 \centering
@@ -73,16 +74,25 @@ touches & purpose & sanctioning rule \\
 \#15--\#16 & leaky baseline, v1 split and clean subset & extended analysis \\
 \#17 & YOLOv8n size point & size ablation, val-chosen threshold \\
 \#18 & corrected detector-aligned two-stage & re-score, no selection \\
+\#19 & YOLOv8n seeds 1--2 and YOLOv8s seeds 3--4 & seed extension, val-chosen thresholds \\
+\#20 & operating-point sweep, five seeds per size & re-read of committed detection records, no selection \\
+\#21 & stratified Grad-CAM re-cut & read-only attribution, strata fixed in advance \\
+\#22 & threshold-selection bootstrap & re-read; validates the val-only rule, chooses nothing \\
+\#23 & five-seed stage-2 audit & pipeline rerun with each seed's own detector \\
+\#24 & seed-3/4 two-stage pipeline & extended analysis, val-chosen configuration \\
+\#25 & embedding near-duplicate check & read-only audit, no detector evaluated \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The only touch that could contaminate a claim is \#4, and it is the evaluation the
-paper's detector numbers come from. Touch \#18 is a correction: the original
-seed-1/2 two-stage runs had reused the seed-0 detector, which we detected from
+Only touch \#4 could contaminate a claim, and it is the evaluation the paper's
+detector numbers come from. Touch \#18 is a correction: the original seed-1/2
+two-stage runs had reused the seed-0 detector, which we detected from
 byte-identical arm-A/arm-B records and corrected by re-running with each seed's
 own checkpoint. No threshold was re-chosen on test; the per-seed validation
-selection was rerun for the corrected detector records.
+selection was rerun for the corrected detector records. Touches \#19--\#24 repeat
+the same protocol on additional seeds; none of them altered a rule, a threshold
+grid, or a selection criterion after looking at test.
 
 \section{Failure gallery and reproduction commands}
 \label{app:repro}

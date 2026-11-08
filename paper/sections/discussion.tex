@@ -3,11 +3,11 @@
 
 \paragraph{Report the operating point, then the curve.} The size sweep is a
 case study showing that mAP and deployment behaviour are different measurements.
-The one available \texttt{yolov8n} checkpoint and three \texttt{yolov8s} seeds
-are close on test mAP, but validation mAP favors s and the n estimate has no
-seed interval. They differ by $4.3\times$ in false alarms at the recall-first
-point, so the result should motivate a threshold-rule sweep rather than a model
-ranking claim.
+Three \texttt{yolov8n} seeds and five \texttt{yolov8s} seeds are close on test
+mAP ($0.979 \pm 0.003$ vs.\ $0.976 \pm 0.003$, intervals overlapping), but
+validation mAP favors s by more than a seed standard deviation and the two
+families differ by $6.2\times$ in false alarms at the recall-first point. The
+result should motivate a threshold-rule sweep rather than a model ranking claim.
 The mechanism is not mysterious: mAP integrates over confidence, and a model can
 rank detections well while being badly calibrated near the threshold a user will
 pick. The recommendation is concrete and cheap. Report, at minimum: the
@@ -15,16 +15,17 @@ validation procedure used to choose a threshold, the threshold itself for every
 seed, and precision, recall, and false-positives-per-image at that threshold on
 test. Report mAP as well, for comparability, but do not let it be the only row.
 
-\paragraph{Threshold transfer is the hidden variable.} Our three seeds select
-thresholds of $0.02$, $0.01$, and $0.21$ for the same architecture, same data,
-same schedule. That is not a bug in the search; it is what happens when a
-validation set has $181$ images and $7$ negatives. The consequence is that
-``model precision'' pooled over seeds is mostly a statement about which
-threshold each seed happened to pick. This is consistent with the two-stage
-result: the classifier looks valuable exactly where the threshold transferred
-badly, but the current three seeds do not identify that as a mechanism.
-Any ablation that changes a component downstream of a fragile threshold will
-inherit that fragility, and a single pooled mean will hide it.
+\paragraph{Threshold transfer is the hidden variable.} Our five seeds select
+thresholds of $0.02$, $0.01$, $0.21$, $0.045$ and $0.125$ for the same
+architecture, same data, same schedule. That is not a bug in the search; it is
+what happens when a validation set has $181$ images and $7$ negatives. The
+consequence is that ``model precision'' pooled over seeds is mostly a statement
+about which threshold each seed happened to pick. This is consistent with the
+two-stage result: the classifier looks valuable exactly where the threshold
+transferred badly, and actively harmful where the selection rule chose a
+near-inert configuration, but five seeds with shared components do not identify
+that as a mechanism. Any ablation that changes a component downstream of a fragile
+threshold will inherit that fragility, and a single pooled mean will hide it.
 
 \paragraph{When is a second stage worth it?} On this evidence, narrowly. The
 classifier is defensible if the requirement is recall $\ge 0.96$ with minimum
@@ -44,10 +45,15 @@ $0.002$ or by $0.2$. Here it is $0.0003$ on the comparable subset. We would not
 have known that from the audit alone, and we would have been tempted to describe
 the leak as catastrophic.
 
-\paragraph{What the saliency audit bought.} It provided a consistency check for
-the two manually identified labels and showed that the image-level baseline has
-weak object-localised evidence. The baseline is degenerate on negatives, and the
-crop enrichment is constrained by the $20\%$ padding geometry, so neither result
-establishes context exploitation. Attribution did not prove any prediction
-correct, and the revised interpretation keeps it as a sanity check rather than a
-mechanistic explanation.
+\paragraph{What the saliency audit bought.} Not much, and we say so rather than
+dressing it up. On the $12$ multi-object test images the metric we used is not
+even well defined, because a single per-image CAM is reused for every detection;
+on the $172$ single-object images the detector's evidence is cleanly
+object-localised (median energy share $0.98$, enrichment $\approx90\times$), which
+is a statement about localisation, not about correctness. The image-level
+baseline's low enrichment is partly a promise of the $20\%$ padding geometry
+under which the ground-truth box occupies most of the crop, and the frozen
+variant is degenerate on negatives. The audit's one useful output was as a
+consistency check on two manually identified label errors. Attribution did not
+prove any prediction correct, and the revised interpretation keeps it as a sanity
+check rather than a mechanistic explanation.

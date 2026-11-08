@@ -5,21 +5,21 @@
 \label{sec:size}
 
 Table~\ref{tab:size} reports both depths. The mAP columns are almost flat:
-$0.977 \pm 0.003$ for \texttt{yolov8s} over three seeds and $0.979$ for
-\texttt{yolov8n} at one seed. On validation the gap is larger
-($0.954$ vs.\ $0.932$), which means we cannot claim the smaller model is better
-on this evidence: the difference is inside the seed spread of the larger model,
-and a single-seed estimate on $189$ test images cannot resolve it. The defensible
-reading is that mAP$_{50}$ cannot distinguish the two detectors.
+$0.976 \pm 0.003$ for \texttt{yolov8s} over five seeds and $0.979 \pm 0.003$ for
+\texttt{yolov8n} over three. On validation the gap is larger
+($0.955 \pm 0.006$ vs.\ $0.934 \pm 0.002$), but the two intervals do not overlap
+and the direction favours the larger model, which means we cannot claim the
+smaller model is better on this evidence. Neither can we claim it is worse: the
+test interval for \texttt{n} sits entirely inside the \texttt{s} interval, so
+mAP$_{50}$ does not resolve the pair.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Size sweep on the frozen test split. \texttt{s} is mean $\pm$ std over
-seeds $0/1/2$; \texttt{n} is seed $0$ only and therefore carries no interval.
-``OP'' is the validation-chosen recall-first operating point
-($R\ge0.97$ on validation), applied unchanged to test. Latency is PC GPU FP32,
-$640\times640$, median of $50$ runs.}
+\caption{Size sweep on the frozen test split. Both rows are mean $\pm$ std over
+seeds ($5$ for \texttt{s}, $3$ for \texttt{n}). ``OP'' is the validation-chosen
+recall-first operating point ($R\ge0.97$ on validation), applied unchanged to
+test. Latency is PC GPU FP32, $640\times640$, median of $50$ runs.}
 \label{tab:size}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -27,55 +27,121 @@ $640\times640$, median of $50$ runs.}
 \toprule
 model & params & GFLOPs & MB & ms & val mAP$_{50}$ & test mAP$_{50}$ & $R$ & $P$ & FP/img \\
 \midrule
-yolov8s & 11.1\,M & 28.6 & 21.5 & 6.5 & $0.9544\pm0.0027$ & $0.9768\pm0.0034$ & $0.9763\pm0.0040$ & $0.5157\pm0.2180$ & $1.510\pm1.009$ \\
-yolov8n & 3.0\,M & 8.2 & 6.0 & 6.9 & 0.9322 & 0.9787 & 0.9842 & 0.1686 & 6.497 \\
+yolov8s & 11.1\,M & 28.6 & 21.5 & 6.5 & $0.9546\pm0.0064$ & $0.9763\pm0.0033$ & $0.9771\pm0.0076$ & $0.579\pm0.181$ & $1.165\pm0.863$ \\
+yolov8n & 3.0\,M & 8.2 & 6.0 & 6.9 & $0.9338\pm0.0017$ & $0.9787\pm0.0025$ & $0.9855\pm0.0023$ & $0.185\pm0.095$ & $7.266\pm4.421$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The operating-point columns are not flat at all. At the recall-first point the
-observed n checkpoint emits \fpn\ false positives per image against \fps\ for the
-s checkpoint---a $4.3\times$ difference. Its precision at that point is $0.169$
-against $0.516$. This is an example of why a deployment-oriented evaluation
+\texttt{n} rows emit \fpn\ false positives per image against \fps\ for the
+\texttt{s} rows---a $6.2\times$ difference. Precision at that point is $0.185$
+against $0.579$. This is an example of why a deployment-oriented evaluation
 should report threshold selection and false alarms alongside mAP, not evidence
-that n is generally worse or that the ranking reverses across model families.
+that \texttt{n} is generally worse or that the ranking reverses across model
+families.
 
-The comparison remains exploratory: n has one seed, its validation mAP is lower,
-and the validation composition differs from test. We therefore do not recommend
-a model from this single operating-point comparison. We note one more
-inconvenient detail: measured latency does not favour the smaller model
-($6.9$ vs.\ $6.5$\,ms), because at this size the fixed per-image overhead
-dominates. The GFLOP and parameter savings are real, the wall-clock saving on
-this hardware is not. Reporting FLOPs as a proxy for latency is another summary
+The comparison remains exploratory: validation mAP is lower for \texttt{n}, and
+the validation composition differs from test. A single operating point is a thin
+basis for any ranking, so we also swept it. For each seed we chose, on validation
+only, the confidence meeting a recall target and then read the test outcome
+(Table~\ref{tab:sweep}). The ranking of the two sizes is not stable across
+targets in any direction we can defend.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Operating-point sweep. For each seed the confidence meeting a validation
+recall target is chosen on validation and applied unchanged to test; only test
+precision is shown. Rows are seeds. No target produces a consistent
+\texttt{n}/\texttt{s} ordering.}
+\label{tab:sweep}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccc}
+\toprule
+model & seed & $R_{\text{val}}\!\ge\!0.90$ & $R_{\text{val}}\!\ge\!0.95$ & $R_{\text{val}}\!\ge\!0.97$ \\
+\midrule
+yolov8s & 0 & 0.975 & 0.854 & 0.396 \\
+        & 1 & 0.968 & 0.735 & 0.356 \\
+        & 2 & 0.979 & 0.875 & 0.764 \\
+        & 3 & 0.949 & 0.795 & 0.217 \\
+        & 4 & 0.964 & 0.862 & 0.731 \\
+\midrule
+yolov8n & 0 & 0.931 & 0.685 & 0.186 \\
+        & 1 & 0.931 & 0.752 & 0.341 \\
+        & 2 & 0.927 & 0.686 & 0.099 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three readings of Table~\ref{tab:sweep}, in decreasing order of what the data
+supports:
+
+(i) \emph{At the strictest target the separation is real.} At
+$R_{\text{val}}\ge0.97$ every \texttt{s} seed except one beats every \texttt{n}
+seed, and the single exception (\texttt{s} seed 3, $0.217$) is a seed whose
+validation threshold collapsed to $0.004$ and which therefore over-produces boxes
+on test. The recall-first regime used in Table~\ref{tab:size} is this column, and
+its direction is consistent.
+
+(ii) \emph{The separation is not preserved at intermediate targets.} At
+$R_{\text{val}}\ge0.95$ the \texttt{s} range is $0.735$--$0.875$ and the
+\texttt{n} range is $0.685$--$0.752$. These overlap: \texttt{n} seed 1 at $0.752$
+sits above \texttt{s} seed 1 at $0.735$, a seed whose validation threshold fell to
+$0.092$. So the claim ``\texttt{n} emits more false alarms'' is true of the mean at
+the operating point we report and at the extremes of the sweep, but false as a
+statement about individual seeds at a comparable recall.
+
+(iii) \emph{We cannot claim a reversal either.} \texttt{n} never overtakes
+\texttt{s} as a group at any target, so reporting this as evidence that the
+smaller model wins would be equally unsupported. What the sweep shows is narrower
+and less quotable than either headline: the \texttt{s} seeds are better separated
+from \texttt{n} at $R\ge0.90$ ($0.949$--$0.979$ vs.\ $0.927$--$0.931$) than at
+$R\ge0.95$, where a single badly-transferred threshold is enough to put one
+\texttt{n} seed above one \texttt{s} seed. The direction of the comparison is
+therefore stable but its margin is not, and a per-seed ranking whose magnitude
+depends on which recall target the user picks is not a ranking. That is the reason
+we report operating points per seed rather than a single comparison, and it is why
+the $\pm$ entries in Table~\ref{tab:size} should not be read as a model
+comparison.
+
+We note one more inconvenient detail: measured latency does not favour the smaller
+model ($6.9$ vs.\ $6.5$\,ms), because at this size the fixed per-image overhead
+dominates. The GFLOP and parameter savings are real, the wall-clock saving on this
+hardware is not. Reporting FLOPs as a proxy for latency is another summary
 statistic that fails to transfer.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Per-seed operating points for \texttt{yolov8s}. The threshold chosen on
-validation varies by an order of magnitude across seeds ($0.01$ to $0.21$) and
-so does the resulting precision. Test mAP barely moves.}
+\caption{Per-seed operating points for \texttt{yolov8s} (five seeds). The
+threshold chosen on validation varies by more than an order of magnitude across
+seeds ($0.01$ to $0.21$) and so does the resulting precision. Test mAP barely
+moves.}
 \label{tab:seed}
 \begin{tabular}{lcccccc}
 \toprule
-seed & val conf & test mAP$_{50}$ & box $P$ & box $R$ & FP/img & image $R$ [95\% CI] \\
+seed & val conf & test mAP$_{50}$ & box $P$ & box $R$ & FP/img & image $R$ \\
 \midrule
-0 & 0.020 & 0.9741 & 0.427 & 0.976 & 1.751 & 1.000 [0.980, 1.000] \\
-1 & 0.010 & 0.9807 & 0.356 & 0.980 & 2.376 & 0.995 [0.970, 0.999] \\
-2 & 0.210 & 0.9756 & 0.764 & 0.972 & 0.402 & 0.984 [0.953, 0.994] \\
+0 & 0.020 & 0.9741 & 0.427 & 0.976 & 1.751 & 1.000 \\
+1 & 0.010 & 0.9807 & 0.356 & 0.980 & 2.376 & 0.995 \\
+2 & 0.210 & 0.9756 & 0.764 & 0.972 & 0.402 & 0.984 \\
+3 & 0.045 & 0.9785 & 0.619 & 0.988 & 0.815 & 0.995 \\
+4 & 0.125 & 0.9726 & 0.729 & 0.968 & 0.481 & 0.989 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:seed} exposes the mechanism. The three seeds reach nearly identical
-test mAP ($0.974$--$0.981$) and nearly identical recall ($0.972$--$0.980$), but
-the validation procedure selects thresholds of $0.02$, $0.01$, and $0.21$,
-producing precisions of $0.427$, $0.356$, and $0.764$. Seed 2 is eight to ten
-times more conservative at the same mAP. Any claim about ``the model's precision''
-that pools these seeds is a claim about the threshold-selection procedure, not
-about the detector. We therefore report per-seed values wherever precision or
-FP/image is the quantity of interest, and treat the three-seed mean as a summary
-of protocol variance rather than of model quality.
+Table~\ref{tab:seed} exposes the mechanism. The five seeds reach nearly identical
+test mAP ($0.973$--$0.981$) and nearly identical box recall ($0.968$--$0.988$),
+but the validation procedure selects thresholds spanning $0.01$ to $0.21$,
+producing precisions from $0.356$ to $0.764$ and FP/image from $0.40$ to $2.38$.
+Seed 2 is roughly five times more conservative than seed 1 at the same mAP while
+matching its recall. Any claim about ``the model's precision'' that pools these
+seeds is a claim about the threshold-selection procedure, not about the detector.
+We therefore report per-seed values wherever precision or FP/image is the
+quantity of interest, and treat the five-seed mean as a summary of protocol
+variance rather than of model quality.
 
 \subsection{Where the variance lives: source structure}
 \label{sec:persource}
@@ -137,27 +203,32 @@ data, and it is one reason we do not claim the two-stage gain is about mines.
 \label{sec:imagelevel}
 
 Table~\ref{tab:imagelevel} asks a coarser question: does the image contain a mine
-at all? The frozen-feature MobileNetV3 baseline is degenerate on this task. Its
-stage-A variant reaches $0.974$ accuracy but balanced accuracy $0.500$ and
-$\kappa = 0.000$: it calls every image positive, which is correct for $184$ of
-$189$ images and useless for triage. Fine-tuning the last layers (stage B) lifts
-balanced accuracy to $0.562 \pm 0.056$ and $\kappa$ to $0.156 \pm 0.148$; still
-weak, and with a standard deviation across three seeds that spans zero agreement.
+at all? The frozen-backbone variant of the MobileNetV3-Large baseline is
+degenerate on this task. Its stage-A row reaches $0.974$ accuracy but balanced
+accuracy $0.500$ and $\kappa = 0.000$: it calls every image positive, which is
+correct for $184$ of $189$ images and useless for triage. Fine-tuning the last
+layers (stage B) lifts balanced accuracy to $0.562 \pm 0.056$ and $\kappa$ to
+$0.156 \pm 0.148$. That is above chance and it is not nothing, but it is close
+to the noise floor: one of the three seeds still has $\kappa \approx 0$ ($-0.009$),
+and the interval over three seeds reaches down to zero agreement. We describe the
+frozen variant as degenerate and the fine-tuned variant as weak-but-nonzero
+rather than lumping both under ``degenerate''.
 
-The detector is a different regime. At its deploy threshold it reaches balanced
-accuracy $0.830 \pm 0.115$ and $\kappa = 0.677 \pm 0.199$; at $\mathrm{OP}_{95}$
-it reaches $0.993 \pm 0.002$ and $\kappa = 0.784 \pm 0.038$. The two-stage arm
-reaches $0.962 \pm 0.059$ and $\kappa = 0.818 \pm 0.094$. The high variance of the
-deploy row is the threshold-transfer problem again: one seed's validation choice
-produces a conservative test operating point and another's does not.
+The detector is a different regime. At its validation-chosen deploy threshold it
+reaches balanced accuracy $0.836 \pm 0.089$ and $\kappa = 0.683 \pm 0.159$; at
+$\mathrm{OP}_{95}$ it reaches $0.973 \pm 0.044$ and $\kappa = 0.780 \pm 0.047$.
+The two-stage arm reaches $0.916 \pm 0.084$ and $\kappa = 0.767 \pm 0.120$. The
+high variance of the deploy row is the threshold-transfer problem again: one
+seed's validation choice produces a conservative test operating point and
+another's does not.
 
 \begin{table}[t]
 \centering
 \small
 \caption{Image-level decisions on test. MNv3 A is seed 0; A+B is mean $\pm$ std
-over three seeds; YOLO and two-stage rows are mean $\pm$ std over three detector
-seeds. Balanced accuracy and $\kappa$ are the meaningful columns given only five
-negative images.}
+over three seeds; YOLO and two-stage rows are mean $\pm$ std over five detector
+seeds, each at its own validation-chosen confidence. Balanced accuracy and
+$\kappa$ are the meaningful columns given only five negative images.}
 \label{tab:imagelevel}
 \begin{tabular}{lccccc}
 \toprule
@@ -167,44 +238,56 @@ MNv3 A (thr 0.5) & 0.974 & 0.500 & 0.974 & 1.000 & 0.000 \\
 MNv3 A (recall-first) & 0.968 & 0.497 & 0.973 & 0.995 & $-0.009$ \\
 MNv3 A+B (thr 0.5) & $0.974\pm0.000$ & $0.500\pm0.000$ & $0.974\pm0.000$ & $1.000\pm0.000$ & $0.000\pm0.000$ \\
 MNv3 A+B (recall-first) & $0.968\pm0.005$ & $0.562\pm0.056$ & $0.977\pm0.003$ & $0.991\pm0.006$ & $0.156\pm0.148$ \\
-YOLO deploy & $0.984\pm0.009$ & $0.830\pm0.115$ & $0.991\pm0.006$ & $0.993\pm0.008$ & $0.677\pm0.199$ \\
-YOLO $\mathrm{OP}_{95}$ & $0.986\pm0.003$ & $0.993\pm0.002$ & $1.000\pm0.000$ & $0.986\pm0.003$ & $0.784\pm0.038$ \\
-Two-stage (arm C) & $0.989\pm0.005$ & $0.962\pm0.059$ & $0.998\pm0.003$ & $0.991\pm0.003$ & $0.818\pm0.094$ \\
+YOLO deploy & $0.984\pm0.007$ & $0.836\pm0.089$ & $0.991\pm0.005$ & $0.992\pm0.006$ & $0.683\pm0.159$ \\
+YOLO $\mathrm{OP}_{95}$ & $0.986\pm0.003$ & $0.973\pm0.044$ & $0.999\pm0.002$ & $0.987\pm0.003$ & $0.780\pm0.047$ \\
+Two-stage (arm C) & $0.987\pm0.006$ & $0.916\pm0.084$ & $0.996\pm0.005$ & $0.991\pm0.003$ & $0.767\pm0.120$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The MNv3 result is worth stating plainly because it is a negative result about a
-standard baseline: a classifier that achieves $97.4\%$ accuracy has learned
-nothing about the task. Accuracy on a $97.4\%$-positive test set is not evidence.
-We keep the row to make the point, and we use the classifier only as a
-\emph{second stage} over detector crops, where the proposal mechanism supplies
-the localisation the image-level baseline lacks.
+The frozen-classifier result is worth stating plainly because it is a negative
+result about a standard baseline: a classifier that achieves $97.4\%$ accuracy has
+learned nothing, and accuracy on a $97.4\%$-positive test set is not evidence.
+Note that this is a property of the class balance, not of MobileNetV3-Large: with
+$3{,}887$ positive and $20$ negative training images the frozen features cannot
+recover a separating direction, whereas the fine-tuned variant does recover a
+weak one. We keep the frozen row to make the accuracy point, and we use the
+classifier only as a \emph{second stage} over detector crops, where the proposal
+mechanism supplies the localisation the image-level baseline lacks and the
+class is balanced by construction ($1{:}1$ after crop sampling rather than
+$195{:}1$).
 
 \subsection{Two-stage: per-seed, not pooled}
 \label{sec:twostage}
 
 Table~\ref{tab:twostage} is the result we most want to be read carefully. Pooled
-over seeds, arm C looks like a clean win: precision $0.814 \pm 0.086$ versus
-$0.734 \pm 0.050$ for the recall-matched baseline, FP/image $0.31$ versus $0.48$.
-The per-seed structure is not a clean win.
+over five seeds, arm C looks like a clean win: precision $0.782 \pm 0.085$ versus
+$0.719 \pm 0.046$ for the recall-matched baseline, FP/image $0.377$ versus
+$0.514$. But if we treat the five seeds as the sample they are and take a
+confidence interval over the per-seed paired differences, every interval spans
+zero: $\Delta P = +0.062\ [-0.058, +0.182]$,
+$\Delta \mathrm{FP/img} = -0.138\ [-0.427, +0.152]$,
+$\Delta R = -0.005\ [-0.010, +0.001]$. Pooling the arms and showing a win, then
+declining to pool the difference, is exactly the error this paper argues against.
+The per-seed structure is what the data supports.
 
 \begin{table}[t]
 \centering
 \small
-\caption{Two-stage ablation on test, mean $\pm$ std over detector seeds
-$0/1/2$ (arm thresholds in the second column). Arm A is YOLO at its deploy
-threshold; B is YOLO at the confidence matching arm C's validation recall; C adds
-the classifier with protection $P=0.4$.}
+\caption{Two-stage ablation on test, mean $\pm$ std over the five detector seeds
+$0$--$4$ (arm thresholds in the second column, in seed order). Arm A is YOLO at
+its deploy threshold; B is YOLO at the confidence matching arm C's validation
+recall; C adds the classifier with protection $P$.}
 \label{tab:twostage}
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{llccccc}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lp{4.1cm}ccccc}
 \toprule
-arm & conf / $\tau$ (s0/s1/s2) & $P$ & $R$ & $F_2$ & FP/img & image $R$ \\
+arm & conf / $\tau$ (s0--s4) & $P$ & $R$ & $F_2$ & FP/img & image $R$ \\
 \midrule
-A & 0.02 / 0.01 / 0.21 & $0.516\pm0.218$ & $0.976\pm0.004$ & $0.808\pm0.102$ & $1.510\pm1.009$ & $0.993\pm0.008$ \\
-B & 0.125 / 0.06 / 0.21 & $0.734\pm0.050$ & $0.974\pm0.002$ & $0.913\pm0.014$ & $0.478\pm0.127$ & $0.989\pm0.005$ \\
-C & $\tau$ 0.27 / 0.23 / 0.22 & $0.814\pm0.086$ & $0.968\pm0.004$ & $0.932\pm0.020$ & $0.309\pm0.174$ & $0.991\pm0.003$ \\
+A & 0.02 / 0.01 / 0.21 / 0.045 / 0.125 & $0.568\pm0.180$ & $0.977\pm0.008$ & $0.839\pm0.085$ & $1.205\pm0.847$ & $0.993\pm0.007$ \\
+B & 0.125 / 0.06 / 0.21 / 0.07 / 0.125 & $0.719\pm0.046$ & $0.973\pm0.003$ & $0.908\pm0.013$ & $0.514\pm0.120$ & $0.990\pm0.005$ \\
+C & $P$ 0.4/0.4/0.4/0.4/0.8; $\tau$ 0.27/0.23/0.22/0.13/0.03 & $0.782\pm0.085$ & $0.968\pm0.003$ & $0.923\pm0.023$ & $0.377\pm0.184$ & $0.991\pm0.003$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -216,48 +299,98 @@ Paired bootstrap, one row per detector seed (Table~\ref{tab:cb}).
 \small
 \caption{Paired bootstrap for arm C minus arm B, computed separately per detector
 seed ($5{,}000$ resamples over the $189$ test images). An interval spanning zero
-means the arms are indistinguishable at that seed.}
+means the arms are indistinguishable at that seed; an interval that excludes zero
+in the negative direction for $\Delta P$ means the two-stage arm is worse.}
 \label{tab:cb}
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{lccc}
 \toprule
 detector seed & $\Delta P$ [95\% CI] & $\Delta$FP/img [95\% CI] & $\Delta R$ [95\% CI] \\
 \midrule
-0 & $+0.128\ [0.065, 0.186]$ & $-0.2529\ [-0.4603, -0.0952]$ & $-0.0079\ [-0.0195, 0.0000]$ \\
-1 & $+0.144\ [0.096, 0.181]$ & $-0.3466\ [-0.5979, -0.1587]$ & $-0.0079\ [-0.0195, 0.0000]$ \\
-2 & $-0.037\ [-0.077, 0.013]$ & $+0.0927\ [-0.0212, 0.2275]$ & $+0.0001\ [-0.0199, 0.0166]$ \\
+0 & $+0.128\ [0.065, 0.186]$ & $-0.253\ [-0.460, -0.095]$ & $-0.008\ [-0.020, 0.000]$ \\
+1 & $+0.144\ [0.096, 0.181]$ & $-0.347\ [-0.598, -0.159]$ & $-0.008\ [-0.020, 0.000]$ \\
+2 & $-0.037\ [-0.077, 0.013]$ & $+0.093\ [-0.021, 0.228]$ & $+0.000\ [-0.020, 0.017]$ \\
+3 & $+0.126\ [0.092, 0.163]$ & $-0.317\ [-0.471, -0.196]$ & $-0.007\ [-0.022, 0.008]$ \\
+4 & $-0.049\ [-0.091, -0.002]$ & $+0.136\ [0.005, 0.302]$ & $+0.000\ [-0.011, 0.010]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Seeds 0 and 1 gain precision and lose a small, bounded amount of recall; the
-precision and false-positive intervals exclude zero. Seed 2 moves the other way:
-the precision point estimate is negative and every interval spans zero, so the
-two-stage pipeline does not help that detector.
+Three seeds gain, one is flat, one regresses. Seeds 0, 1 and 3 gain precision and
+lose a small, bounded amount of recall, with the precision and false-positive
+intervals excluding zero. Seed 2 is indistinguishable: the point estimates point
+the wrong way and every interval spans zero. Seed 4 is the case we want to state
+first rather than last: precision \emph{falls} by $0.049$ with an interval that
+excludes zero, and FP/image \emph{rises} by $0.136$ with an interval that also
+excludes zero. On this seed the two-stage pipeline is measurably worse than the
+single stage it is supposed to improve on.
 
-The mechanism is visible in the arm-A confidences. At seed 2 the validation
-procedure selects $0.21$ for both the deploy and the matched-recall arms, so arms
-A and B coincide: the baseline is already operating at a well-transferred
-threshold, and the classifier has no error mass to remove. At seeds 0 and 1 the
-validation threshold is $0.02$ and $0.01$, both of which transfer badly to test
-and produce $1.75$ and $2.38$ false positives per image. The classifier repairs
-that specific failure. It is not improving localisation; it is compensating for a
-threshold that did not generalise.
+Seed 4's failure has a diagnosable cause, and the diagnosis is the paper's point
+rather than a rescue. Its validation-only selection rule chose protection $P=0.8$
+with classifier threshold $\tau = 0.03$; at that cutoff the classifier vetoes
+almost nothing, so the surviving detection pool is larger than arm B's and
+precision drops. Validation already preferred YOLO-only at that seed ---
+FP/image $1.448$ for C against $0.956$ for A, the only seed of five where this
+happens --- so the rule had the information it needed and still selected the
+regressing configuration. The rule minimises FP/image subject to a
+$0.005$ recall-drop cap, and it has no protection against choosing a
+near-inert classifier that satisfies the cap trivially. As a purely diagnostic
+check (not a candidate result, since it changes the selection rule after seeing
+test), forcing the stage-1 confidence to $0.125$ at that seed gives test
+$P = 0.844$, $\mathrm{FP/img} = 0.238$ against $0.729$ and $0.481$ for arm B. The
+classifier is not broken at seed 4; the selection rule is. We report the uncorrected
+number as the result and the corrected one as an explanation.
+
+The mechanism behind the wins is visible in the arm-A confidences. At seeds 2 and
+4 the validation procedure selects the \emph{same} confidence for the deploy and
+matched-recall arms ($0.21$ and $0.125$ respectively), so arms A and B coincide:
+the baseline is already operating at a well-transferred threshold and the
+classifier has little error mass to remove. At seeds 0, 1 and 3 the validation
+thresholds are $0.02$, $0.01$ and $0.045$, which transfer badly to test and
+produce $1.75$, $2.38$ and $1.02$ false positives per image. The classifier
+repairs that specific failure. It is not improving localisation; it is
+compensating for a threshold that did not generalise.
 
 Two consequences follow, and both cut against the headline. First, the two-stage
 effect is not a stable property of the architecture; it is conditional on the
-baseline being badly thresholded. Any paper reporting the three-seed mean without
-this decomposition is reporting a protocol artifact. Second, if one is allowed to
-tune the single-stage threshold on validation with the same freedom, the
-classifier loses under a max-$F_2$ objective. For seed 0, a YOLO confidence of
-$0.52$ on validation gives test $P = 0.976$, $R = 0.949$, $\mathrm{FP/img} = 0.032$,
-against $P = 0.945$, $R = 0.957$, $\mathrm{FP/img} = 0.074$ for the best
-max-$F_2$ two-stage configuration. The single stage is $3.1$ points better in
-precision and emits less than half the false alarms, at $0.8$ points less recall.
-The defensible role for the classifier is therefore narrower than the aggregate
-table suggests: the strict high-recall regime ($R \ge 0.96$) and
-terrain-nuisance rejection. It is not a general-purpose improvement, and we say
-so.
+baseline being badly thresholded by validation. Any paper reporting the five-seed
+mean without this decomposition is reporting a protocol artifact. Second, the
+classifier's advantage is not robustness to threshold choice. If the single-stage
+threshold is chosen on validation with the same freedom we allowed the pipeline,
+there exists a YOLO operating point that dominates it. For seed 0, a YOLO
+confidence of $0.52$ chosen on validation gives test $P = 0.976$, $R = 0.949$,
+$\mathrm{FP/img} = 0.032$. The best validation-chosen two-stage configuration
+under the same objective reaches $P = 0.945$, $R = 0.957$,
+$\mathrm{FP/img} = 0.074$ --- $3.0$ points less precision and more than twice the
+false alarms, for $0.8$ points more recall. The two $F_2$ scores are within
+$0.0004$ of each other ($0.9539$ against $0.9543$), so this is \emph{not} a case
+where one arm wins on $F_2$; it is a case where the whole $F_2$-optimal frontier
+has a point that a tuned single-stage threshold already reaches, and the two-stage
+arm merely lands on a different part of it. That is a weaker claim than ``the
+classifier loses,'' and it is the one the data supports.
+
+The narrower, defensible role for the classifier is the strict high-recall regime
+($R \ge 0.96$), where the single stage's false-alarm rate grows faster than the
+classifier's, and terrain-nuisance rejection. It is not a general-purpose
+improvement, and we say so.
+
+A final caveat on the unit of replication. The five seeds are not five fully
+independent end-to-end systems. Seeds 0, 1 and 2 train their stage-2 classifier
+on the same crop set, generated once from the seed-0 detector
+(\texttt{paper\_results/stage2/crops/}); seeds 3 and 4 generate their own crops
+from their own stage-1 checkpoints. At \emph{evaluation} time all five runs are
+detector-aligned: each scores its own detector's detections, which is why the
+seed-1 and seed-2 runs are labelled \texttt{s1\_aligned} and \texttt{s2\_aligned}
+and why their arm-A operating points ($0.01$ and $0.21$) coincide with those
+seeds' own validation-chosen confidences rather than seed 0's $0.02$. Each run
+also uses a separately trained stage-2 classifier (\texttt{s2\_ratio1\_s0}
+through \texttt{s4}, distinct checkpoints with distinct file hashes), so the
+classifier side is not shared. What is shared is the stage-2 \emph{recipe}
+throughout, and the crop-generation detector for seeds 0--2 only. The effective
+number of independent replications is therefore closer to four than five, and the
+$\pm$ standard deviations in Table~\ref{tab:twostage} should be read as variation
+across threshold-selection outcomes, not as variation across independently
+trained end-to-end systems.
 
 \begin{figure}[t]
 \centering
@@ -309,37 +442,65 @@ pad 0.4 & 0.4 & 224 & yes & 0.25 & 0.868 & 0.196 & $-0.025\ [-0.042, -0.011]$ \\
 \label{sec:gradcam}
 
 We use attribution as a falsification tool and report what it shows, including
-where it is uninformative. On $244$ true-positive detections, the median share of
-CAM energy inside the ground-truth box is $0.939$ (mean $0.690$, first quartile
-$0.0002$, third quartile $0.996$). Median enrichment over the box's area share is
-$58.2\times$; the peak falls inside the box for $73.0\%$ of detections. The
-distribution is heterogeneous, but the current E1 implementation targets a
-single top anchor per image. In multi-object images this can assign zero energy
-to annotated objects that were not the selected anchor. We therefore treat the
-distribution as descriptive and do not interpret the low-energy group as
-evidence that detections are right for the wrong reason.
+where it is uninformative. The headline aggregate on $244$ true-positive
+detections is that the median share of CAM energy inside the ground-truth box is
+$0.939$ (mean $0.690$, first quartile $0.0002$, third quartile $0.996$), median
+enrichment over the box's area share is $58.2\times$, and the peak falls inside the
+box for $73.0\%$ of detections. That aggregate is misleading on its own, and we
+do not report it on its own for the rest of this section.
 
-Deletion tests confirm the direction. Masking the ground-truth box lowers the
-detection score by $0.739$ on average ($n=182$); masking a matched background
-region lowers it by $0.0015$. The detector's score depends on the object region,
-as it should.
+Stratifying the same detections by how many ground-truth boxes the image contains
+changes the picture completely. The test split has $172$ single-object images and
+$12$ multi-object images ($253$ boxes in $189$ files). On the $170$
+single-object detections the median energy share is $0.977$ (\texttt{s} seed 0;
+$0.988$ and $0.981$ for seeds 3 and 4), the mean share is $0.90$--$0.93$, and
+median enrichment is $88$--$91\times$: the detector looks at the object. On the
+$74$ multi-object detections the median share is $0.000$ and enrichment $0.000$,
+with $62$ of $74$ detections below $0.01$; the recurrence of the six multi-mine
+\texttt{Jan} frames is what the first-quartile figure of $0.0002$ actually
+measures.
 
-The head-to-head comparison is suggestive but not causal. On images where both
-the detector and the image-level classifier are correct, detector enrichment has
-median $86.0\times$ and the MobileNetV3 baseline has median $1.82\times$; the
-paired difference is $+147.0\ [125.4, 170.0]$ in favour of the detector. On
-detector crops, the stage-2 classifier reaches $2.13\times$. With $20\%$ crop
-padding, enrichment is strongly constrained by crop geometry, and the image-level
-baseline is degenerate on negatives ($\kappa\approx0$). These measurements do
-not establish context exploitation or explain the two-stage effect.
+This is a metric artifact, not a model failure. The E1 implementation computes
+one CAM per image from the single top-scoring anchor, then attributes every
+detection on that image to the same map; on a ten-mine frame, nine correctly
+localised detections are scored against a map built for the tenth. We therefore
+report the single-object stratum as the informative one, stay silent on the
+multi-object stratum, and explicitly decline the interpretation this
+pattern would otherwise invite --- that a bimodal energy distribution means
+detections are ``right for the wrong reason.'' The data cannot separate a genuine
+low-attribution detection from an aggregation bug, and since the low-energy mass
+is entirely inside the stratum where the bug applies, that interpretation is
+untestable here.
+
+Deletion tests confirm the direction without establishing a mechanism. Masking the
+ground-truth box lowers the detection score by $0.739$ on average ($n=182$);
+masking a matched background region lowers it by $0.0015$. The detector's score
+depends on the object region, as it should. It does not follow that the detector's
+score depends \emph{on context}, and nothing in this section tests that.
+
+The head-to-head comparison is likewise a statement about where the two models
+look, not about why either is right. On images where both the detector and the
+image-level classifier are correct, detector enrichment has median $86.0\times$
+and the MobileNetV3-Large baseline has median $1.82\times$; the paired difference
+is $+147.0\ [125.4, 170.0]$ in favour of the detector. On detector crops, the
+stage-2 classifier reaches $2.13\times$. Neither of the smaller figures should be
+read as a failure: with $20\%$ crop padding the box occupies most of the crop, so
+enrichment is bounded near $1/0.7^{2}\approx2$ by geometry alone, and the
+image-level baseline predicts a bounding box for the whole frame, for which
+``inside the box'' is not a meaningful target. The image-level baseline is also
+degenerate on negatives in the image-level task ($\kappa\approx0$). These
+measurements do not establish context exploitation and do not explain the
+two-stage effect.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.95\linewidth]{figs/gradcam_example_grid.png}
-\caption{Grad-CAM on detector crops (top) and image-level classifier (bottom).
-The detector's evidence is object-localised; the classifier's is diffuse. This is
-a statement about where each model looks, not about whether either prediction is
-correct.}
+\caption{Grad-CAM on detector crops (top) and image-level classifier (bottom),
+all from single-object images. On such images the detector's evidence is
+object-localised; the classifier's is diffuse. On multi-object images the E1
+aggregation reuses one per-image CAM for every detection, so detector panels are
+not shown for that stratum. This is a statement about where each model looks, not
+about whether either prediction is correct.}
 \label{fig:gradcam}
 \end{figure}
 
@@ -350,11 +511,18 @@ images; inpainting a mine out of an image makes it disappear in $100$ of $100$
 composites. The asymmetry is expected: synthetic pastes carry feathered edges and
 scale mismatch, so the detector is being asked to fire on an object that looks
 slightly wrong. We report the numbers as an upper bound on the paste setup's
-realism, not as an estimate of the detector's sensitivity to context. The
-zero-energy cases are more useful: exactly two test images had zero CAM energy in
-the box, and both were the objectively wrong labels found in manual review. That
-independent confirmation is the strongest evidence in this section that the
-attribution pipeline is measuring something real.
+realism, not as an estimate of the detector's sensitivity to context.
+
+The one zero-energy result we do stand behind is at the image level, not the
+detection level. The E5 flag pass aggregates energy over the \emph{union} of all
+ground-truth boxes on an image, which sidesteps the per-image CAM problem above.
+Of $184$ true-positive test images, $19$ fall below the $0.800$ threshold, and
+hand review of those found exactly two --- \texttt{ds0\_0801} and
+\texttt{ds0\_0883} --- whose annotations are objectively wrong, one missed mine
+each. This is consistent with the attribution pipeline tracking something real at
+the image level, but it is a hypothesis about two images, not a validated audit
+method: we did not independently re-derive the label errors by any other route,
+and we make no claim about the remaining $17$ flagged images.
 
 Finally, the failure catalogue (Table~\ref{tab:failures}) is the qualitative
 counterpart. Of $29$ reviewed false positives, $22$ are terrain texture; of $9$

@@ -1,0 +1,5 @@
+query_split,query_name,train_name,pHash_hamming,mse32,gate_that_let_it_through,status,confidence
+test,ds1_0054_JPG.rf.35bfc4f17ba71b62c6182a17f2aa2cf8.jpg,ds0_0054_JPG.rf.81c89cf2bd517a6ce49dd44b8da4c59b.jpg,4,577.2,hamming>2 -> never MSE-tested,PROBABLE MISSED LEAK,high
+test,ds1_0111_jpg.rf.fc71e30a2fedd64cb231dfc8e3d157ec.jpg,ds1_0111_png.rf.2dfd1474115691b29262567fae391b0f.jpg,18,758.2,hamming>2 -> never MSE-tested,NEEDS MANUAL REVIEW (features disagree),medium
+test,ds1_0111_jpg.rf.fc71e30a2fedd64cb231dfc8e3d157ec.jpg,ds1_0111_png.rf.4d0b623930c8f08a683130ed8dbdff0f.jpg,20,844.9,hamming>2 -> never MSE-tested,NEEDS MANUAL REVIEW (features disagree),medium
+test,ds1_0111_jpg.rf.fc71e30a2fedd64cb231dfc8e3d157ec.jpg,ds1_0111_png.rf.7c6f86be0fa274b55afb9ee83fcedc0d.jpg,16,893.4,hamming>2 -> never MSE-tested,NEEDS MANUAL REVIEW (features disagree),medium

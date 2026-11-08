@@ -22,8 +22,10 @@ region proposals \citep{ren2015faster}, with focal loss
 \citep{lin2017focal} addressing foreground imbalance. Our contribution is not a
 detector. We deliberately use the most standard available baseline, because the
 point is that evaluation choices dominate architecture choices at this scale. The
-lightweight classifier in our second stage is MobileNetV3
-\citep{howard2019mobilenetv3}, chosen for cost rather than novelty.
+lightweight classifier in our second stage is MobileNetV3-Large
+\citep{howard2019mobilenetv3} ($3{,}119{,}535$ parameters, torchvision
+\texttt{mobilenet\_v3\_large} with ImageNet weights), chosen for cost rather than
+novelty.
 
 \paragraph{Leakage and reproducibility.} That machine-learning results can be
 inflated by information leaking across train and evaluation splits is now well
@@ -31,7 +33,10 @@ documented, both as a general methodological failure
 \citep{kapoor2023leakage,kapoor2024reforms,roberts2021pitfalls} and in specific
 benchmarks \citep{recht2019imagenet,barz2020train}. The canonical defence is
 group-aware splitting, so that no group---scene, patient, site, or source
-document---spans the boundary \citep{kohavi1995study}. In image corpora, groups
+document---spans the boundary; and once the split is fixed, the estimator used to
+turn it into a number is itself a choice, since cross-validation and bootstrap
+schemes of the same data do not agree with each other \citep{kohavi1995study}. In
+image corpora, groups
 must be recovered from pixels when filenames are unreliable: perceptual hashing
 \citep{zauner2010phash} proposes near-duplicate candidates, and a pixel-space
 distance such as MSE or SSIM \citep{wang2004ssim} separates true re-exports from

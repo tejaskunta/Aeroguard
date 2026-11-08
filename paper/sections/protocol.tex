@@ -9,24 +9,27 @@ committed JSON or CSV. (iv) The original dataset and the pre-audit runs are neve
 modified. (v) Test labels are corrected only when objectively wrong, with
 before/after numbers reported.
 
-\paragraph{Test-touch accounting.} The full log contains $18$ numbered touches.
-Four are large: the seed-0 frozen-protocol detector evaluation, the seed-0 and
-seed-1/2 two-stage evaluations, and the corrected detector-aligned two-stage
-re-scoring. The remainder are the per-seed detector evaluations, the MNv3
-baseline evaluations, and the Grad-CAM passes, each sanctioned by the protocol
+\paragraph{Test-touch accounting.} The full log contains $25$ numbered touches.
+Five are large: the seed-0 frozen-protocol detector evaluation, the seed-0 and
+seed-1/2 two-stage evaluations, the corrected detector-aligned two-stage
+re-scoring, and the four-seed extension of the two-stage pipeline. The remainder
+are the per-seed detector evaluations, the MNv3 baseline evaluations, the
+Grad-CAM passes, the stratified Grad-CAM re-cut, and the four analysis re-reads
+recorded in the extended-analysis block; each is sanctioned by the protocol
 before execution. We also disclose a deviation: the upstream training script
 auto-evaluates test at confidence $0.25$ at the end of training, and this
 behaviour could not be disabled by flag. It is recorded as D017. No threshold,
 checkpoint, or architecture choice references those numbers; they appear in no
 table here. The frozen-protocol evaluation is a separate, single pass.
 
-\paragraph{Correction we had to make.} An earlier version of the three-seed
-two-stage result reused the seed-0 detector for all three seeds, producing a
-tight mean of $0.879 \pm 0.018$. The arms A and B records were byte-identical
-across seeds, which is the tell. Re-running the pipeline with each seed's own
-detector gives $0.894 / 0.825 / 0.724$ and a standard deviation of $0.086$. The
-tight interval was an artifact of a shared component. We report the corrected
-numbers throughout and flag the earlier figure as withdrawn.
+\paragraph{Correction we had to make.} An earlier version of the two-stage result
+reused the seed-0 detector for all three seeds, producing a tight mean of
+$0.879 \pm 0.018$. The arms A and B records were byte-identical across seeds,
+which is the tell. Re-running the pipeline with each seed's own detector gives
+$0.894 / 0.825 / 0.724$ and a standard deviation of $0.086$. The tight interval
+was an artifact of a shared component. With the two additional detector seeds the
+five-seed mean is $0.782 \pm 0.085$. We report the corrected numbers throughout
+and flag the earlier figure as withdrawn.
 
 \paragraph{Compute.} All training and evaluation ran on one NVIDIA RTX~4070
 Laptop GPU with $8$\,GB of memory, under Windows, within an approved budget of
@@ -45,9 +48,13 @@ correction. Each omission is a real limitation and is listed in
 Section~\ref{sec:limitations}. We prefer to name them than to let a single-seed
 or single-family result stand in for a claim it cannot support.
 
-\paragraph{Artifacts.} The repository contains the code, the six detector
-checkpoints (three seeds, ONNX included), the three stage-2 checkpoints, the
-frozen split manifest and its digest, all evaluation JSONs, the generated tables,
-and the figures. Regenerating the tables requires no GPU and no dataset: the
-committed JSONs are sufficient, and the table script fails loudly if a required
-field is missing rather than silently substituting a value.
+\paragraph{Artifacts.} The repository contains the code, the released detector
+checkpoints (\texttt{yolov8s} seeds 0--2, each with \texttt{best.pt},
+\texttt{last.pt} and an ONNX export), the three stage-2 checkpoints, the frozen
+split manifest and its digest, all evaluation JSONs, the generated tables, and the
+figures. The seed-3 and seed-4 \texttt{yolov8s} runs and the \texttt{yolov8n}
+seeds 0--2 were trained on the same frozen split and their evaluation JSONs are
+committed, but their weight files are not part of the release tree.
+Regenerating the tables requires no GPU and no dataset: the committed JSONs are
+sufficient, and the table script fails loudly if a required field is missing
+rather than silently substituting a value.

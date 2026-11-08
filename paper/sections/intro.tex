@@ -39,26 +39,32 @@ by less than the folklore predicts---a negative result, and one that would have
 been invisible without the contamination-free subset.
 
 \item \textbf{mAP$_{50}$ does not settle the deployment question.} A YOLOv8s
-detector over three seeds reaches $0.977 \pm 0.003$ test mAP$_{50}$; the one
-available YOLOv8n seed reaches $0.979$. Although the n point is slightly higher
-on test, validation mAP favors s ($0.954$ vs. $0.932$), and n has no seed
-interval. At the recall-first operating point chosen on validation, the observed
-n checkpoint produces $6.50$ false positives per image against $1.51$ for s.
-We present this as a case study in threshold transfer and operating-point
-reporting, not as a reliable model-ranking reversal.
+detector over five seeds reaches $0.976 \pm 0.003$ test mAP$_{50}$; YOLOv8n over
+three seeds reaches $0.979 \pm 0.003$. Although the n point is slightly higher
+on test, validation mAP favors s ($0.955 \pm 0.006$ vs.\ $0.934 \pm 0.002$),
+and the test intervals overlap almost completely. At the recall-first operating
+point chosen on validation, the n seeds produce $7.27 \pm 4.42$ false positives
+per image against $1.17 \pm 0.86$ for s. We present this as a case study in
+threshold transfer and operating-point reporting, not as a reliable
+model-ranking reversal.
 
 \item \textbf{The two-stage gain is detector-dependent, and we can say why.} A
 MobileNetV3-Large classifier over detector crops improves precision over a
-recall-matched single-stage baseline at two of three detector seeds
-($\Delta P = +0.128$ and $+0.144$, paired bootstrap intervals excluding zero).
-At the third seed it is \emph{worse} ($\Delta P = -0.037$, interval
-$[-0.077, +0.013]$). Under a max-$F_2$ rule, a single confidence threshold tuned
-on validation beats the two-stage pipeline outright ($P = 0.976$ vs.\ $0.945$).
-The pattern is consistent with the classifier helping when the validation-selected
-detector threshold transfers poorly to test, but three seeds do not identify that
-mechanism. Where the baseline threshold transfers well, the second stage has
-nothing to add. Reporting a three-seed mean of $0.879 \pm 0.018$ would have hidden
-this entirely; we report the per-seed structure instead.
+recall-matched single-stage baseline at three of five detector seeds
+($\Delta P = +0.128$, $+0.144$ and $+0.126$, paired bootstrap intervals
+excluding zero). At a fourth it is indistinguishable
+($\Delta P = -0.037$, interval $[-0.077, +0.013]$) and at the fifth it is
+\emph{worse} ($\Delta P = -0.049$, interval $[-0.091, -0.002]$). A confidence
+interval over the five per-seed paired differences spans zero
+($+0.062\ [-0.058, +0.182]$), so the mean gain is not established. Under a
+max-$F_2$ rule, a single confidence threshold tuned on validation beats the
+two-stage pipeline outright ($P = 0.976$ vs.\ $0.945$). The pattern is consistent
+with the classifier helping when the validation-selected detector threshold
+transfers poorly to test, but five seeds with shared components do not identify
+that mechanism. Where the baseline threshold transfers well, the second stage has
+nothing to add; where the selection rule picks a near-inert classifier, it actively
+subtracts. Reporting a pooled mean would have hidden this entirely; we report the
+per-seed structure instead.
 \end{enumerate}
 
 \paragraph{Why this is worth publishing.} None of the three findings required a

@@ -21,7 +21,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 # arms re-evaluated against detector seeds 1/2 in RUN_LOG touch #18. The older `s1`/`s2`
 # directories pair a *different* YOLO seed with the seed-0 two-stage classifier, so their
 # arm A/B rows are byte-identical to seed 0 and must never be published.
-TWOSTAGE_SEEDS = ("s0", "s1_aligned", "s2_aligned")
+# `s3`/`s4` are the seed-3/4 stages added in RUN_LOG touch #24.
+TWOSTAGE_SEEDS = ("s0", "s1_aligned", "s2_aligned", "s3", "s4")
 
 
 def load(p):
@@ -62,6 +63,12 @@ def write(name, md_header, md_rows, md_notes, tex_cols, tex_rows, tex_caption):
              f"\\begin{{tabular}}{{{colspec}}}\\hline",
             " & ".join(tex_cols) + "\\\\"]
     for r in tex_rows:
+        # Guard: a row whose cell count disagrees with the colspec produces a
+        # silently malformed table (LaTeX pads or errors depending on the run).
+        if not str(r[0]).startswith("\\hline") and len(r) != len(tex_cols):
+            raise SystemExit(
+                f"{name}: tex_rows emit {len(r)} cells but tex_cols declares "
+                f"{len(tex_cols)} columns; fix the header or the row builder.")
         lines.append(" & ".join(str(c) for c in r) + "\\\\") if not r[0].startswith("\\hline") else lines.append("\\hline")
     lines += ["\\hline\\end{tabular}\\end{table}"]
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -193,11 +200,11 @@ def main():
           ["split", "images", "inst", "neg", "sources"], tex,
           "Dataset statistics and leakage audit of the frozen v2 split")
 
-    # ---------------- T2 YOLO size sweep (v2; yolov8s 3 seeds, yolov8n 1 seed)
+    # ---------------- T2 YOLO size sweep (v2; yolov8s 5 seeds, yolov8n 3 seeds)
     # GFLOPs are stored in each size_latency.json so that a clean clone can rebuild
     # this table without the (uncommitted) runs/ tree or a torch install.
-    size_runs = [("yolov8s", "s", (0, 1, 2)), ("yolov8n", "n", (0,))]
-    ttests = [load(PR / "yolo" / f"s_seed{s}" / "test.json") for s in (0, 1, 2)]
+    size_runs = [("yolov8s", "s", (0, 1, 2, 3, 4)), ("yolov8n", "n", (0, 1, 2))]
+    ttests = [load(PR / "yolo" / f"s_seed{s}" / "test.json") for s in (0, 1, 2, 3, 4)]
     md = ["| model | params | GFLOPs | weights MB | latency ms (med) | val mAP50 | test mAP50 | "
           "test R@OP | test P@OP | FP/img@OP | OP conf (val) |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     tex = []
@@ -216,20 +223,26 @@ def main():
         op_p = [t["ops"]["op97_primary"]["precision"] for t in tst]
         op_fp = [t["ops"]["op97_primary"]["fp_per_image"] for t in tst]
         op_c = [t["ops"]["op97_primary"]["conf"] for t in tst]
+
+        def _conf(c):
+            # 3 dp: several seeds select 0.045 / 0.125 and 2 dp collapses them
+            # (0.04 / 0.12). `abs(c) if c == 0 else c` normalises -0.0, which
+            # max(c, 0.0) does not, since max() returns its first argument on ties.
+            return f"{abs(c) if c == 0 else c:.3f}"
+
         md.append(f"| {label} | {sl['params']:,} | {sl['gflops']:.1f} | {sl['weights_mb']:.1f} | "
                   f"{sl['latency_ms_median']:.1f} | {ms(val_m50, 4)} | {ms(test_m50, 4)} | "
                   f"{ms(op_r, 4)} | {ms(op_p, 4)} | {ms(op_fp, 3)} | "
-                  + "/".join(f"{c:.2f}" for c in op_c) + " |")
+                  + "/".join(_conf(c) for c in op_c) + " |")
         tex.append([label] + [f"{sl['params']:,}".replace(",", " "), f"{sl['gflops']:.1f}",
                               f"{sl['weights_mb']:.1f}", f"{sl['latency_ms_median']:.1f}"] +
                    [ms(val_m50, 4), ms(test_m50, 4), ms(op_r, 4), ms(op_p, 4), ms(op_fp, 3),
-                    "/".join(f"{c:.2f}" for c in op_c)])
+                   "/".join(_conf(c) for c in op_c)])
     write("t2_yolo_size", "### T2. YOLO size sweep on frozen split v2 (PC GPU)", md,
-          ["yolov8s is trained on v2 with seeds 0/1/2 (mean ± std over seeds); yolov8n is a "
-           "single seed (0) and its GFLOPs/MB/ms are single values, so its row carries no "
-           "error bars. yolov8m was trained on the older leaky v1 split only and is therefore "
-           "not comparable here (RUN_LOG touch #18; the leaky-vs-clean comparison is reported "
-           "separately).",
+          ["yolov8s is trained on v2 with seeds 0/1/2/3/4 and yolov8n with seeds 0/1/2 "
+           "(mean ± std over seeds); both rows carry intervals. yolov8m was trained on the "
+           "older leaky v1 split only and is therefore not comparable here (RUN_LOG touch #18; "
+           "the leaky-vs-clean comparison is reported separately).",
            "Latency: PC GPU FP32, imgsz 640, 50 reps after 10 warm-up reps "
            "(paper_results/yolo/*/size_latency.json). GFLOPs are for the single-class head "
            "(nc=1) at 640; Ultralytics' published nc=80 figures for the same depths are "
@@ -277,7 +290,7 @@ def main():
           row("MNv3 A+B (recall-first thr)", ab_rf),
           row("YOLO deploy (conf from val)", yolo_op_img),
           row("YOLO op95 (conf from val)", yolo_op95_img),
-          row("Two-stage (arm C, 3 seeds)", ts_img)]
+          row("Two-stage (arm C, 5 seeds)", ts_img)]
     tex = []
     for label, dicts in (("MNv3 A (0.5)", [a_05]), ("MNv3 A+B (RF)", ab_rf),
                          ("YOLO deploy", yolo_op_img), ("Two-stage C", ts_img)):
@@ -285,13 +298,13 @@ def main():
                               ("accuracy", "balanced_accuracy", "precision", "recall", "kappa")])
     write("t3_image_level", "### T3. Image-level comparison (test)", md,
           ["MNv3 A+B = mean ± std over seeds 0/1/2; MNv3 A is seed 0; "
-           "YOLO deploy/op95 = mean ± std over seeds 0/1/2 (each seed's OP conf chosen on val).",
+           "YOLO deploy/op95 = mean ± std over seeds 0/1/2/3/4 (each seed's OP conf chosen on val).",
            "MNv3 recall-first thresholds chosen on val only."],
           ["system", "acc", "bal acc", "P", "R", "kappa"],
           tex, "Image-level comparison on the frozen test split")
 
     # ---------------- T4 two-stage ablation
-    md = ["| arm | conf/thr (seed 0 / 1 / 2) | precision | recall | F2 | FP/img | img recall |",
+    md = ["| arm | conf/thr (seed 0 / 1 / 2 / 3 / 4) | precision | recall | F2 | FP/img | img recall |",
           "|---|---|---|---|---|---|---|"]
     tex = []
     reps = [load(PR / "twostage" / d / "test_report.json") for d in TWOSTAGE_SEEDS]
@@ -312,8 +325,10 @@ def main():
         else:
             a = r0["arms"]["C_two_stage"]
             vals = [f"{r['arms']['C_two_stage']['cls_thr']:g}" for r in reps]
-            conf = f"yolo {a['yolo_conf']:g}, P={a['protect_conf']:g}, t=" + " / ".join(vals)
-            tconf = (f"y{a['yolo_conf']:g} P{a['protect_conf']:g} "
+            prots = [f"{r['arms']['C_two_stage']['protect_conf']:g}" for r in reps]
+            conf = (f"yolo {a['yolo_conf']:g}, P " + " / ".join(prots) + ", t "
+                    + " / ".join(vals))
+            tconf = (f"y{a['yolo_conf']:g} P{'/'.join(prots)} "
                      f"t{'/'.join(vals)}")
         md.append(f"| {arm} | {conf} | " + " | ".join(cols) + " |")
         tex.append([arm.split()[0], tconf] + cols)
@@ -333,16 +348,18 @@ def main():
     notes = [
         "Paired bootstrap C-B, one row per detector seed (5000 resamples over test images): "
         + "; ".join(pb_lines)
-        + ". The precision/FP gain is significant at detector seeds 0 and 1 only: at seed 2 the "
-          "paired interval for precision spans zero and the point estimate is negative, so the "
-          "two-stage advantage is not established across seeds.",
+        + ". The precision/FP gain excludes zero at detector seeds 0, 1 and 3. At seed 2 the "
+          "paired interval for precision spans zero and the point estimate is negative; at seed 4 "
+          "the point estimate is negative and the precision/FP intervals exclude zero in the "
+          "*wrong* direction. The two-stage advantage is therefore not established across seeds.",
         f"Cost (plan §5.4, detector seed 0): {rep0_cost['ms_per_image']:.1f} ms/image end-to-end, "
         f"{rep0_cost['crops_per_image_mean']:.2f} crops/image (p95 "
         f"{rep0_cost['crops_per_image_p95']:.1f}), PC GPU FP32.",
-        "Means ± std over the three detector seeds 0/1/2 for all arms. Stage 1 for every row is the "
-        "YOLOv8s checkpoint of that seed; the stage-2 classifier weights are shared. Arms A and B are "
-        "YOLO-only, so they differ between rows only through the detector checkpoint and the "
-        "per-seed val-chosen threshold.",
+        "Means ± std over the five detector seeds 0/1/2/3/4 for all arms. Stage 1 for every row is "
+        "the YOLOv8s checkpoint of that seed, so each run scores its own detector's detections. The "
+        "stage-2 classifiers are separately trained per seed (distinct checkpoints), but seeds 0-2 "
+        "share one crop set generated from the seed-0 detector, so the effective replication is "
+        "closer to four than five.",
         "Arm A threshold = recall-first operator point chosen on val; arm B threshold chosen on val "
         "to match arm A's val recall; arm C = YOLO dets at conf>=yolo_conf routed through the "
         "MobileNetV3-Large crop classifier with protected cutoff P and classifier threshold t.",
@@ -351,9 +368,15 @@ def main():
         "comparison there is against an undegraded YOLO baseline. The two-stage pipeline loses "
         "3.6 points of precision against that baseline, i.e. the gain in T4 comes from seeds whose "
         "val-selected YOLO threshold transferred poorly to test, not from seeds where it transferred "
-        "well. This is the central threat to the headline claim and is discussed in §8."]
+        "well. Detector seed 4 fails for a related reason: its val-only selection rule chose a "
+        "near-inert classifier (protect 0.8, t 0.03), so the classifier vetoes almost nothing and "
+        "the surviving pool is larger than arm B's. Validation already preferred YOLO-only at that "
+        "seed (val FP/img 1.448 for C vs 0.956 for A, the only seed of five where this happens), so "
+        "the regression is a selection-rule artifact rather than a capability signal; see "
+        "paper_results/analysis/a4_s4_conf_diagnostic.md. This is the central threat to the "
+        "headline claim and is discussed in §8."]
     write("t4_two_stage", "### T4. Two-stage pipeline (arms A, B, C)", md, notes,
-          ["arm", "P", "R", "F2", "FP/img", "img R"], tex,
+          ["arm", "conf/thr (s0/s1/s2/s3/s4)", "P", "R", "F2", "FP/img", "img R"], tex,
           "Two-stage ablation on the frozen test split")
 
     # ---------------- T5 Grad-CAM metrics
