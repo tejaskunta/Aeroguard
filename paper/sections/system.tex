@@ -1,0 +1,108 @@
+\section{System Design and the Provenance Gap}
+\label{sec:system}
+
+The preceding sections evaluate models. A deployed system is a different object,
+and the distance between the two is where most claims about this work must stop.
+We describe what the accompanying deployment project (AeroShield) contains, and
+then report a finding that belongs to this paper's central argument even though it
+concerns engineering rather than detection.
+
+\paragraph{Architecture, as design and not as measurement.} The project targets a
+Jetson Nano ($4$\,GB, Maxwell generation, JetPack 4.6 / L4T 32.7.6, CUDA 10.2,
+TensorRT 8.2, Python 3.6). Inference is onboard and the ground station is a
+client. A FastAPI service backed by a PostGIS store handles missions, detections,
+operator adjudication and report generation, with a web frontend providing a map
+view, a Grad-CAM comparison and an adjudication workflow.
+
+Two features of this design matter for how the present results should be read.
+
+First, \emph{the backend runs no model}. Its image-upload detection endpoint is a
+development stub returning a fixed detection with a fixed confidence, and the
+endpoint's own docstring cites the project requirements (\S2.2) as ruling out
+server-side inference. This is the right architecture for the task---the sensor
+is on the aircraft, and the ground station's job is bookkeeping, human review and
+reporting---but it has a consequence for reporting: no throughput, latency or
+accuracy figure obtained from the backend describes detection performance. A
+system diagram that shows a detector on both sides of the radio link is
+architecturally wrong as well as unsupported.
+
+Second, \emph{the export path is constrained by the device}. The detector is
+exported to ONNX at a fixed $640\times640$ input with opset 12 and non-maximum
+suppression left out of the graph, then compiled on the target with
+\texttt{trtexec --fp16}. The opset ceiling is set by the platform, not by
+preference: JetPack 4.6 ships TensorRT 8.2, and an engine produced for a newer
+TensorRT cannot be loaded. The engine must be built on the device; an engine
+compiled on a desktop GPU will not run on Maxwell. The ONNX file is portable and
+the engine is not, which is a common source of edge numbers that cannot be
+reproduced from the repository that reports them.
+
+\paragraph{The provenance gap.} Our evaluation and the deployment diverged, and
+neither repository records where. The models evaluated here are YOLOv8s
+($11.2$\,M parameters) and YOLOv8n ($3.0$\,M) trained on the rebuilt split
+$3{,}907/181/189$ and evaluated on a leak-audited test set. The deployment
+project's committed evidence points elsewhere: its training script sets the base
+model to \texttt{yolov8m.pt}, its committed training report documents a
+$75$-epoch YOLOv8m run on the pre-rebuild split ($5{,}723/455/221$), and the ONNX
+file it ships is $103.6$\,MB beside a $42.7$\,MB PyTorch checkpoint of the same
+name. The parameter ratio between the two backbones is $25.9/11.2 = 2.31$; the
+file-size ratio is $103.6/42.7 = 2.32$. Both artifacts declare one class
+(\texttt{Landmine}), so this is not the class-count confusion we corrected
+earlier in this project's own documentation---it is a question of which backbone
+and which split. Which file was actually flashed to the device is not recorded in
+either repository.
+
+\begin{table}[t]
+\centering
+\caption{What was evaluated against what was deployed. The right-hand column is
+assembled from the deployment project's training script, its committed report and
+the size of the ONNX file it ships; the three agree with each other. Neither
+repository records which file reached the device.}
+\label{tab:artifact}
+\scriptsize
+\begin{tabular}{lll}
+\toprule
+ & evaluated here & deployment artifacts \\
+\midrule
+backbone & YOLOv8s & YOLOv8m \\
+parameters & $11.2$\,M & $25.9$\,M \\
+classes & 1 (\texttt{Landmine}) & 1 (\texttt{Landmine}) \\
+split & v2, $3{,}907/181/189$ & v1, $5{,}723/455/221$ \\
+leak-audited & yes, $30$ removed & no \\
+provenance & manifest digest & not recorded \\
+evaluated here & --- & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a leakage failure of a different kind, and it is worth naming precisely,
+because the vocabulary of the field does not cover it. The literature on leakage
+describes \emph{data} crossing a split boundary. What happened here is an
+\emph{artifact} crossing a project boundary: a checkpoint was produced, reported,
+and deployed, and the report describing it was filed in a directory that was later
+emptied by a rebuild. Every individual step was reasonable. The training run is
+documented; the report is committed; the weights directory has a README
+explaining how to regenerate the checkpoint. The failure is compositional. The
+only link between the evaluated model and the deployed model was a filename, and
+the filename was reused.
+
+The methodological recommendation is narrow and cheap. A commit hash identifies
+the \emph{code} that produced a model, not the model. A checkpoint manifest---file
+name, SHA-256, backbone, class list, split digest, and the export parameters used
+to produce the ONNX---identifies the model, and it can be verified from the
+artifact in a few seconds without re-running anything. This paper ships such a
+manifest for the evaluated models (Section~\ref{sec:availability}). The deployment
+side does not, and the cost of that absence is exactly the ambiguity in
+Table~\ref{tab:artifact}: a defensible claim that a detector of this family runs
+on this hardware, and no defensible claim about which one.
+
+\paragraph{What remains unmeasured.} The deployment repository contains no
+committed timing record. Its edge numbers appear in prose in its README, no run
+artifacts are stored, and therefore none of them can be verified, re-derived, or
+compared with Table~\ref{tab:size}. We do not import them. The gap is not a
+contradiction to be argued with but an absence to be filled: the models evaluated
+here are exported and ready to run onboard, and producing an on-device number for
+one of them is an instrumentation task---build the engine on the device, run the
+existing per-stage timing harness, commit its summary---rather than a change of
+method. Until that is done this paper makes no claim about edge throughput,
+energy, or thermal behaviour, and the deployment project's architecture should be
+read as design intent rather than as a validated result.

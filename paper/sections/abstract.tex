@@ -43,5 +43,9 @@ traced to a validation-only selection rule choosing a near-inert classifier, not
 to a classifier failure. The Grad-CAM results are descriptive evidence rather
 than proof of correctness or context use. All experiments were run on one 8\,GB
 laptop GPU within a $\sim$30\,h budget; we state explicitly what that budget
-forbade.
+forbade. Finally, we document an evaluation gap that the leakage literature does
+not name: the checkpoint deployed in the accompanying system is not any
+checkpoint evaluated here---different backbone, different split---and neither
+repository records the transition. We call this \emph{artifact} drift, and we
+give the per-artifact manifest that prevents it.
 \end{abstract}

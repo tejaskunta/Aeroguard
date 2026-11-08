@@ -43,12 +43,11 @@ feathered, scale-mismatched composites. It is a probe, not a counterfactual.
 \item \textbf{No on-device characterisation.} All latency numbers in
 Table~\ref{tab:size} are PC GPU FP32 at $640\times640$. No edge measurement is
 reported here, so we make no claim about Jetson throughput or energy. The
-accompanying AeroShield deployment project runs a single-class YOLO detector on a
-Jetson Nano via TensorRT and exposes a per-run timing summary, but its committed
-timings belong to an earlier \texttt{YOLOv8m} checkpoint trained on the
-pre-rebuild split, not to any model evaluated in this paper. Obtaining an
-on-device number for the models above is therefore an instrumentation and
-re-export task, not a change of method.
+accompanying deployment project contains no committed timing record, so its own
+prose figures cannot be verified or reused; the artifact mismatch behind that
+gap is described in Section~\ref{sec:system}. Obtaining an on-device number for
+the models above is an instrumentation and re-export task, not a change of
+method.
 \item \textbf{Source confound.} \texttt{Jan} and \texttt{May} are colour
 photographs with marker pins, despite \texttt{lwir} in the filename. Marker
 shortcuts cannot be fully excluded, and the source dominates aggregate false

@@ -100,11 +100,18 @@ analysis showing when the second stage is not worth its cost
 separation between attribution and correctness, showing that the image-level
 classifier's accuracy is not accompanied by object-level evidence
 (Section~\ref{sec:gradcam}).
+\item A documented instance of \emph{artifact} drift: the checkpoint behind the
+accompanying deployment project differs from every checkpoint evaluated here in
+both backbone and split, and neither repository records the transition. We give
+the artifact-level account that would have prevented it
+(Section~\ref{sec:system}).
 \end{itemize}
 
 Section~\ref{sec:related} positions the work; Section~\ref{sec:data} describes the
 corpus and its provenance; Section~\ref{sec:audit} the audit;
 Sections~\ref{sec:method}--\ref{sec:protocol} the models and protocol;
-Section~\ref{sec:results} the results; Sections~\ref{sec:discussion}--\ref{sec:ethics}
-discussion, limitations and ethics. Code, weights, tables and the frozen split
-manifest accompany the paper (Section~\ref{sec:availability}).
+Section~\ref{sec:results} the results; Section~\ref{sec:discussion} the
+discussion; Section~\ref{sec:system} the deployment architecture and the
+artifact-drift finding; Sections~\ref{sec:limitations}--\ref{sec:ethics}
+limitations and ethics. Code, weights, tables and the frozen split manifest
+accompany the paper (Section~\ref{sec:availability}).

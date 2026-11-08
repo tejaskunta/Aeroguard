@@ -12,6 +12,12 @@
 
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
+% IEEEtran numbers \paragraph headings (a), b), c) ...) by default, which also
+% demotes enumerate lists to 1), 2). We use \paragraph as an unnumbered run-in
+% heading, so stop numbering above subsection level. Subsection numbering (VII-A)
+% is retained; nothing in the document uses \subsubsection.
+\setcounter{secnumdepth}{2}
+
 % Headline numbers, defined once so prose and tables cannot drift.
 \newcommand{\maptest}{0.976}
 \newcommand{\mapstd}{0.003}
@@ -45,6 +51,7 @@ evaluation protocol, YOLOv8
 \input{sections/protocol}
 \input{sections/results}
 \input{sections/discussion}
+\input{sections/system}
 \input{sections/limitations}
 \input{sections/ethics}
 \input{sections/availability}
