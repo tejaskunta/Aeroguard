@@ -40,9 +40,13 @@ come from detector false positives on the training split, which is the correct
 procedure but limits how novel the negatives are.
 \item \textbf{Synthetic composites.} The paste-and-remove experiment uses
 feathered, scale-mismatched composites. It is a probe, not a counterfactual.
-\item \textbf{Not edge-validated.} All latency numbers are PC GPU FP32. No
-Jetson, TensorRT, or flight hardware was used; the edge phases were dropped from
-scope.
+\item \textbf{Not edge-validated.} All latency numbers in
+Table~\ref{tab:size} are PC GPU FP32 at $640\times640$. No Jetson, TensorRT, or
+flight hardware was used, so we make no claim about on-device throughput or
+energy. The accompanying AeroShield deployment project does target a Jetson Nano
+via TensorRT, but its on-device timings were measured with a three-class
+detector and therefore do not describe the single-class model evaluated here;
+quoting them as validation of this detector would be invalid.
 \item \textbf{Source confound.} \texttt{Jan} and \texttt{May} are colour
 photographs with marker pins, despite \texttt{lwir} in the filename. Marker
 shortcuts cannot be fully excluded, and the source dominates aggregate false

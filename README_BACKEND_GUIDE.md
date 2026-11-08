@@ -7,6 +7,20 @@ This file is an additional project readme and does not replace the main README.
 AeroShield is an AI-assisted drone landmine detection and mapping project.
 Current implementation in this repository focuses on a clean FastAPI backend foundation.
 
+> **Stale snapshot — see the live repository.** The `backend/` and `jetson/`
+> directories here are a Week-1/2 snapshot merged in at commit `9c1d287`
+> ("Integrate AeroShield backend architecture with SafeMine YOLOv8 training
+> pipeline"). AeroShield is now its own repository, `tejaskunta/AeroShield`,
+> which has moved well past this point (full API-key auth, PostgreSQL/PostGIS
+> models, RAG copilot, a React/TypeScript mission console, and an 11-module
+> TensorRT edge pipeline). Everything below describes **only** the snapshot in
+> this repo. Do not cite numbers from this snapshot as current AeroShield
+> behaviour.
+>
+> Note also that this repository is **AeroGuard**, the landmine-detection
+> research paper. AeroShield is the companion deployment/system project; the two
+> names are not interchangeable.
+
 ## Current Backend Progress
 
 - Phase 1 complete: FastAPI app, root endpoint, health endpoint, Swagger docs.

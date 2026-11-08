@@ -20,7 +20,7 @@ indicators only** — buried objects are invisible to the camera (design constra
 
 | Path | Contents |
 |---|---|
-| `paper/` | **Manuscript** (LaTeX, single-column preprint) + `refs.bib` + build `Makefile` |
+| `paper/` | **Manuscript** (LaTeX, IEEEtran two-column conference format) + `refs.bib` + build `Makefile` |
 | `models/` | **All trained weights** (YOLO 3 seeds, stage-2 3 seeds, original v1) + SHA256 + README + `NOTICE.md` |
 | `reports/` | **PDF reports** — per-seed training reports + multi-phase research summary |
 | `paper_results/` | Tables (T1–T6 .md/.tex), figures, per-seed eval JSONs, Grad-CAM, visualizations |
@@ -39,7 +39,22 @@ indicators only** — buried objects are invisible to the camera (design constra
 | `scripts/` | Dataset audit/resplit (`phase1_audit.py`, `phase2_*.py`), export/predict |
 | `scripts/inspect/` | Ad-hoc JSON/crop inspection helpers (`dump_*.py`) |
 | `tests/` | `pytest` suite (`conftest.py` puts `src/*` on the path) |
-| `backend/`, `jetson/` | Serving stub and TensorRT inference |
+| `backend/`, `jetson/` | **Stale Week-1/2 AeroShield snapshot** — do not use |
+
+> **`backend/` and `jetson/` are a frozen snapshot, not this project.** They were
+> merged in at `9c1d287` from an early AeroShield state and have not been updated
+> since. The real deployment system — FastAPI service with API-key auth,
+> PostgreSQL/PostGIS, a RAG copilot, a React mission console, and an 11-module
+> TensorRT edge pipeline — lives in the separate repository
+> [tejaskunta/AeroShield](https://github.com/tejaskunta/AeroShield).
+>
+> The two projects are **different things**: AeroGuard (this repo) is the
+> detection research paper; AeroShield is the deployment system built on top of
+> it. Note that AeroShield's Jetson measurements were taken with a **3-class**
+> detector (`landmine_metal`, `landmine_plastic`, `debris_negative`), whereas the
+> detector evaluated in `paper/` is **single-class** (`Landmine`). Edge latencies
+> are therefore not interchangeable between the two and must not be quoted as
+> validating the paper's model.
 
 Every script resolves the repo root from `Path(__file__)`, so all commands below
 run from the repository root regardless of where the script lives.
