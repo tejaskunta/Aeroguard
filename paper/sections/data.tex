@@ -10,7 +10,7 @@ carries one class, \texttt{landmine}, and axis-aligned boxes. There is no
 mine-type label; the task is presence and localisation of a visible
 mine-like object. Table~\ref{tab:data} gives the frozen split.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Frozen dataset \texttt{landmine\_combined\_v2}. ``neg'' counts images
@@ -27,7 +27,7 @@ valid & 181 & 419 & 7 & Jan 42, ds0 138, ds1 1 \\
 test & 189 & 253 & 5 & Jan 10, ds0 151, ds1 28 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The class is heavily imbalanced in the detection sense and, more importantly,
 heterogeneous in acquisition. Table~\ref{tab:shift} shows the source/split shift
@@ -38,7 +38,7 @@ generate false positives by construction, and vice versa. This is not a nuisance
 to be averaged away: it is the principal source of variance in the test set, and
 we return to it in Section~\ref{sec:persource}.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Source and split composition. The test set is dominated by
@@ -62,7 +62,7 @@ valid & ds0 & 138 & 131 & 0.95 & 5.07\% \\
 valid & ds1 & 1 & 1 & 1.00 & 0.00\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Two content defects, disclosed}
 

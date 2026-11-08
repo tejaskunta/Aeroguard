@@ -5,14 +5,14 @@ The project kept a numbered decision register. The entries that bear on claims i
 this paper are reproduced here; the full register, with dates and rationale for
 all $23$ entries, is in \texttt{DECISIONS.md}.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
 \caption{Abridged decision register. Entries omitted here concern file layout and
 tooling rather than claims.}
 \label{tab:decisions}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{0.055\linewidth}p{0.86\linewidth}}
+\begin{tabular}{@{}p{0.055\linewidth}p{0.86\linewidth}@{}}
 \toprule
 ID & Decision and reason \\
 \midrule
@@ -47,7 +47,7 @@ D023 & Remove two objectively wrong test boxes (tree trunk, fence); report
 before/after; do not retrain (no training-label errors found). \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \section{Test-touch accounting}
 \label{app:touches}
@@ -55,7 +55,7 @@ before/after; do not retrain (no training-label errors found). \\
 Eighteen numbered test touches were logged during the original run; a further
 seven were logged during the extended analysis. Grouped by purpose:
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \small
 \caption{Test-touch accounting, grouped by purpose.}
@@ -83,7 +83,7 @@ touches & purpose & sanctioning rule \\
 \#25 & embedding near-duplicate check & read-only audit, no detector evaluated \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Only touch \#4 could contaminate a claim, and it is the evaluation the paper's
 detector numbers come from. Touch \#18 is a correction: the original seed-1/2
@@ -101,6 +101,7 @@ The false-positive contact sheet is reproduced in Figure~\ref{fig:failures}. The
 full false-negative gallery, the audit montages, the per-image predictions, and
 the Grad-CAM heatmaps are in the repository under \texttt{paper\_results/}.
 
+\begin{figure*}[t]
 \begin{verbatim}
 # tables T1-T6 and figures (no GPU, no dataset required)
 python src/reporting/make_tables.py
@@ -115,6 +116,7 @@ python src/pipeline/phase5_pipeline.py --yolo <seed_best.pt> \
 # statistical analysis, bootstrap and policy rules
 python src/analysis/analysis_stats.py
 \end{verbatim}
+\end{figure*}
 
 Environment: Python 3.11.9, Ultralytics 8.4.117, PyTorch 2.6.0+cu124,
 torchvision 0.21.0+cu124, NVIDIA RTX~4070 Laptop (8\,GB). Evaluation at

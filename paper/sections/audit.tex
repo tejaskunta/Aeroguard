@@ -48,7 +48,7 @@ $370$ evaluation images with a Hamming-$\le 2$ training neighbour all have
 $\mathrm{MSE} \ge 958.6$ and were verified as texture false positives. True leak
 rate: $0/370$.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Leakage audit outcome for the frozen split. ``Residual candidates''
@@ -69,7 +69,7 @@ Confirmed true leak rate & $0/370 = 0.0\%$ \\
 Manifest SHA-256 & \texttt{748322d6\ldots c80de} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{What the leak was worth}
 \label{sec:leakvalue}
@@ -93,7 +93,7 @@ comparable because the two models use different validation-selected confidences;
 we do not infer that leakage has zero effect on deployment behaviour from this
 comparison.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Leaky-versus-clean comparison. The leaky model's operating confidence
@@ -113,7 +113,7 @@ leaky v1 & v2 test, contamination-free ($n=49$) & 0.9950 & 0.7250 & 0.863 & 0.20
 clean v2 s0 & v2 test, contamination-free ($n=49$) & 0.9947 & 0.7010 & 0.354 & 2.347 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 This is a negative result and we treat it as one. The literature on leakage
 \citep{kapoor2023leakage,recht2019imagenet} prepares one to expect a large

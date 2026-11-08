@@ -13,7 +13,7 @@ smaller model is better on this evidence. Neither can we claim it is worse: the
 test interval for \texttt{n} sits entirely inside the \texttt{s} interval, so
 mAP$_{50}$ does not resolve the pair.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Size sweep on the frozen test split. Both rows are mean $\pm$ std over
@@ -31,7 +31,7 @@ yolov8s & 11.1\,M & 28.6 & 21.5 & 6.5 & $0.9546\pm0.0064$ & $0.9763\pm0.0033$ & 
 yolov8n & 3.0\,M & 8.2 & 6.0 & 6.9 & $0.9338\pm0.0017$ & $0.9787\pm0.0025$ & $0.9855\pm0.0023$ & $0.185\pm0.095$ & $7.266\pm4.421$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The operating-point columns are not flat at all. At the recall-first point the
 \texttt{n} rows emit \fpn\ false positives per image against \fps\ for the
@@ -111,7 +111,7 @@ dominates. The GFLOP and parameter savings are real, the wall-clock saving on th
 hardware is not. Reporting FLOPs as a proxy for latency is another summary
 statistic that fails to transfer.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Per-seed operating points for \texttt{yolov8s} (five seeds). The
@@ -130,7 +130,7 @@ seed & val conf & test mAP$_{50}$ & box $P$ & box $R$ & FP/img & image $R$ \\
 4 & 0.125 & 0.9726 & 0.729 & 0.968 & 0.481 & 0.989 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Table~\ref{tab:seed} exposes the mechanism. The five seeds reach nearly identical
 test mAP ($0.973$--$0.981$) and nearly identical box recall ($0.968$--$0.988$),
@@ -167,7 +167,7 @@ under-represented in images, and that any intervention which suppresses
 \texttt{Jan} false alarms will look like a large aggregate gain while being a
 modest, source-specific change.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Per-source test results for seeds 0, arm A (YOLO at deploy threshold)
@@ -189,7 +189,7 @@ C & ds1 & 28 & 28 & 4 & 0.875 & 1.000 & 0.143 \\
 C & all & 189 & 244 & 29 & 0.894 & 0.964 & 0.153 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 We flag a confound: \texttt{Jan} and \texttt{May} are the sources whose filenames
 claim thermal imagery but whose pixels are colour photographs with marker pins
@@ -222,7 +222,7 @@ high variance of the deploy row is the threshold-transfer problem again: one
 seed's validation choice produces a conservative test operating point and
 another's does not.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Image-level decisions on test. MNv3 A is seed 0; A+B is mean $\pm$ std
@@ -243,7 +243,7 @@ YOLO $\mathrm{OP}_{95}$ & $0.986\pm0.003$ & $0.973\pm0.044$ & $0.999\pm0.002$ & 
 Two-stage (arm C) & $0.987\pm0.006$ & $0.916\pm0.084$ & $0.996\pm0.005$ & $0.991\pm0.003$ & $0.767\pm0.120$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The frozen-classifier result is worth stating plainly because it is a negative
 result about a standard baseline: a classifier that achieves $97.4\%$ accuracy has
@@ -271,7 +271,7 @@ $\Delta R = -0.005\ [-0.010, +0.001]$. Pooling the arms and showing a win, then
 declining to pool the difference, is exactly the error this paper argues against.
 The per-seed structure is what the data supports.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Two-stage ablation on test, mean $\pm$ std over the five detector seeds
@@ -290,11 +290,11 @@ B & 0.125 / 0.06 / 0.21 / 0.07 / 0.125 & $0.719\pm0.046$ & $0.973\pm0.003$ & $0.
 C & $P$ 0.4/0.4/0.4/0.4/0.8; $\tau$ 0.27/0.23/0.22/0.13/0.03 & $0.782\pm0.085$ & $0.968\pm0.003$ & $0.923\pm0.023$ & $0.377\pm0.184$ & $0.991\pm0.003$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Paired bootstrap, one row per detector seed (Table~\ref{tab:cb}).
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Paired bootstrap for arm C minus arm B, computed separately per detector
@@ -314,7 +314,7 @@ detector seed & $\Delta P$ [95\% CI] & $\Delta$FP/img [95\% CI] & $\Delta R$ [95
 4 & $-0.049\ [-0.091, -0.002]$ & $+0.136\ [0.005, 0.302]$ & $+0.000\ [-0.011, 0.010]$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Three seeds gain, one is flat, one regresses. Seeds 0, 1 and 3 gain precision and
 lose a small, bounded amount of recall, with the precision and false-positive
@@ -417,7 +417,7 @@ interval that touches zero $[0.000, 0.036]$, a difference we do not claim.
 Doubling to $320$ costs $0.025$. All intervals are paired image bootstraps
 against the baseline on the same test images.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \caption{Stage-2 ablations at the validation-chosen recall-safe rule, detector
@@ -436,7 +436,7 @@ pad 0.0 & 0.0 & 224 & yes & 0.16 & 0.866 & 0.201 & $-0.027\ [-0.043, -0.011]$ \\
 pad 0.4 & 0.4 & 224 & yes & 0.25 & 0.868 & 0.196 & $-0.025\ [-0.042, -0.011]$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Grad-CAM: evidence, not correctness}
 \label{sec:gradcam}

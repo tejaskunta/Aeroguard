@@ -1,16 +1,12 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
+\documentclass[conference]{IEEEtran}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{array}
-\usepackage[round]{natbib}
-\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{microtype}
 \usepackage{xcolor}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,hypertexnames=false]{hyperref}
 \usepackage{enumitem}
 \usepackage{float}
 
@@ -23,18 +19,22 @@
 \newcommand{\fpn}{7.266}
 \newcommand{\manifestsum}{748322d6}
 
-\title{\bfseries Not the Metric You Report:\\[4pt]
-Leakage-Audited Landmine Surface Detection,\\[2pt]
+\title{Not the Metric You Report:\\
+Leakage-Audited Landmine Surface Detection,\\
 and Why mAP$_{50}$ Cannot Choose an Operating Point}
 
-\author{Anonymous Authors\\[2pt]
-\small Preprint. Under review.}
-\date{November 2026}
+\author{\IEEEauthorblockN{Anonymous Authors}%
+\IEEEauthorblockA{Preprint. Under review.}}
 
 \begin{document}
 \maketitle
 
 \input{sections/abstract}
+
+\begin{IEEEkeywords}
+landmine detection, object detection, dataset leakage, operating point,
+evaluation protocol, YOLOv8
+\end{IEEEkeywords}
 
 \input{sections/intro}
 \input{sections/related}
@@ -48,10 +48,10 @@ and Why mAP$_{50}$ Cannot Choose an Operating Point}
 \input{sections/ethics}
 \input{sections/availability}
 
-\bibliographystyle{plainnat}
+\bibliographystyle{IEEEtranN}
 \bibliography{refs}
 
-\appendix
+\appendices
 \input{sections/appendix}
 
 \end{document}
