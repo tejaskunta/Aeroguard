@@ -44,10 +44,11 @@ feathered, scale-mismatched composites. It is a probe, not a counterfactual.
 Table~\ref{tab:size} are PC GPU FP32 at $640\times640$. No edge measurement is
 reported here, so we make no claim about Jetson throughput or energy. The
 accompanying deployment project contains no committed timing record, so its own
-prose figures cannot be verified or reused; the artifact mismatch behind that
-gap is described in Section~\ref{sec:system}. Obtaining an on-device number for
-the models above is an instrumentation and re-export task, not a change of
-method.
+prose figures cannot be verified or reused. What we establish instead is
+host-side: the export reproduces the checkpoint, and the device imposes the
+format. Obtaining the on-device number is an instrumentation run against the
+procedure we commit, not a change of method
+(Section~\ref{sec:system}).
 \item \textbf{Source confound.} \texttt{Jan} and \texttt{May} are colour
 photographs with marker pins, despite \texttt{lwir} in the filename. Marker
 shortcuts cannot be fully excluded, and the source dominates aggregate false

@@ -33,6 +33,17 @@ dataset: the committed JSONs are sufficient. The table script exits with an erro
 if a required field is absent rather than substituting a value, so a clean clone
 either reproduces the tables in this paper or fails visibly.
 
+\paragraph{Export audit.} The host-side measurements in Section~\ref{sec:system}
+are produced by \texttt{scripts/measure\_export\_parity.py} and written to
+\texttt{paper\_results/edge/}\\{\texttt{export\_parity\_host.json}}; both are
+committed, so the export parity, the graph facts and the artifact comparison in
+Table~\ref{tab:artifact} can be re-derived from a clean clone. The audit is
+general: it takes any set of checkpoints and graphs and classifies each against
+the others, so it can be pointed at a future deployment tree. The device procedure
+is committed as \texttt{docs/EDGE\_MEASUREMENT.md}. It contains no result, only
+the build command, the harness invocation, and the fields a valid on-device run
+must report.
+
 \paragraph{Persistent identifier.} No DOI has been assigned at the time of this
 draft. The manifest digest above is a content-level identifier; a Zenodo DOI and
 exact release tag will be added to the camera-ready release.

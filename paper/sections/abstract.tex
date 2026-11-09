@@ -44,8 +44,9 @@ to a classifier failure. The Grad-CAM results are descriptive evidence rather
 than proof of correctness or context use. All experiments were run on one 8\,GB
 laptop GPU within a $\sim$30\,h budget; we state explicitly what that budget
 forbade. Finally, we document an evaluation gap that the leakage literature does
-not name: the checkpoint deployed in the accompanying system is not any
-checkpoint evaluated here---different backbone, different split---and neither
-repository records the transition. We call this \emph{artifact} drift, and we
-give the per-artifact manifest that prevents it.
+not name. The deployment tree stores two files named \texttt{best} that are, by a
+calibrated artifact comparison, two different models---one YOLOv8s, one
+YOLOv8m---neither of which is any model evaluated here, and neither project records
+the transition. We call this \emph{artifact} drift, and we give the per-artifact
+manifest that prevents it.
 \end{abstract}

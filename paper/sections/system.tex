@@ -1,108 +1,190 @@
-\section{System Design and the Provenance Gap}
+\section{From Model to System}
 \label{sec:system}
 
 The preceding sections evaluate models. A deployed system is a different object,
 and the distance between the two is where most claims about this work must stop.
-We describe what the accompanying deployment project (AeroShield) contains, and
-then report a finding that belongs to this paper's central argument even though it
-concerns engineering rather than detection.
+This section reports what can be measured about that distance without the device
+in hand. It separates three layers. The \emph{exported artifact}: a trained
+checkpoint leaves the training environment as an ONNX graph, and whether that
+graph still computes the evaluated model is a question we can answer on the host,
+with numbers. The \emph{device constraint}: the target fixes the export format,
+the precision and the toolchain, and those are design facts rather than results.
+The \emph{device number}: the one figure the system half of this paper would most
+like to have, and the one it does not have. The finding that organises the section
+belongs to the paper's central argument even though it concerns engineering rather
+than detection.
 
-\paragraph{Architecture, as design and not as measurement.} The project targets a
-Jetson Nano ($4$\,GB, Maxwell generation, JetPack 4.6 / L4T 32.7.6, CUDA 10.2,
-TensorRT 8.2, Python 3.6). Inference is onboard and the ground station is a
-client. A FastAPI service backed by a PostGIS store handles missions, detections,
-operator adjudication and report generation, with a web frontend providing a map
-view, a Grad-CAM comparison and an adjudication workflow.
+\paragraph{The exported artifact is the evaluated model.} An ONNX export is a
+re-derivation of the network in a second framework, and it can silently disagree
+with the checkpoint it came from---a missed operator, a changed input size, a
+different preprocessing contract. We therefore check it. For each committed
+checkpoint that ships an ONNX export, we run both representations on a fixed
+random input and compare the raw tensors. Across the three released detector seeds
+the maximum absolute difference is $6.1\times10^{-4}$, $8.5\times10^{-4}$ and
+$1.1\times10^{-3}$---the scale of a single-precision rounding step at the end of
+the graph, not a semantic divergence. None of the three is bitwise identical,
+which a floating-point export should not be expected to be.
 
-Two features of this design matter for how the present results should be read.
+The exported graph also carries a fact that ties the system side to the thesis of
+this paper. The graphs are opset 12 with a fixed $640\times640$ input and a
+$[1, 5, 8400]$ output---$5 = 4$ box coordinates $+ 1$ class, so the single class
+is baked into the output tensor. Neither non-maximum suppression nor a confidence
+threshold is inside the graph. The artifact therefore produces \emph{all}
+candidate boxes down to a negligible score, and the operating point---the
+confidence cut and the NMS rule---lives entirely in the caller. The exported file
+is not the detector that runs; it is a function the caller has not yet finished.
+This is the same separation that Section~\ref{sec:results} argues for at the level
+of metrics: an artifact does not have an operating point, and reporting one as
+though it did is the category error this paper is about.
+
+\paragraph{Two files, one name, two models.} The deployment project stores its
+weights under the name \texttt{best}. Its \texttt{weights} directory holds
+\texttt{best.pt} and \texttt{best.onnx}. By the convention every training
+framework follows, those two files are one model in two formats: the checkpoint
+and its export. They are not. \texttt{best.pt} is a YOLOv8s model of
+$11.16$\,M parameters; \texttt{best.onnx} is a YOLOv8m model of $25.88$\,M, more
+than twice the size. The two are not different runs of the same architecture; they
+are different architectures.
+
+We establish this by comparison rather than by inference. Raw file size is an
+unreliable clue here, because the checkpoints are stored in half precision while an
+ONNX export of the same weights is single precision, so an identical model roughly
+doubles in size across the format boundary. Raw kernel values are unreliable too,
+because the exporter folds batch normalisation into the preceding convolution and
+rescales every weight. We therefore compare conv kernels scale-invariantly after
+batch-norm folding: two kernels are scored by whether one is a positive scalar
+multiple of the other, which is exactly the relationship a folded batch-norm
+imposes, and which a different training run does not satisfy. A copy of the same
+checkpoint scores $1.0$.
+
+The method is calibrated on the artifacts in this repository. As a positive
+control, a committed checkpoint compared against its own committed ONNX export
+scores a median agreement of $1.0$ over all $64$ shared convolutional layers. As a
+negative control---and this is the case that matters, because it is the one a
+shape-only comparison cannot catch---an export of seed~0 compared against the
+seed~1 checkpoint of the identical architecture also has full shape coverage but
+scores $0.003$. The agreement score, not the layer count, is what separates
+identity from mere architectural similarity.
+
+Against this calibration the two deployment artifacts are unambiguous
+(Table~\ref{tab:artifact}). The \texttt{.pt} file has YOLOv8s-shaped convolutional
+layers---$64$ tensors, full shape overlap with the committed detector seeds and
+$95\%$ with the published YOLOv8s backbone---but its agreement with every
+checkpoint stored here is below $0.004$. It is a distinct YOLOv8s training run,
+a seed we do not have. The \texttt{.onnx} file has YOLOv8m-shaped layers---$84$
+tensors, full overlap with the committed YOLOv8m checkpoint and $96\%$ with the
+published YOLOv8m backbone---but its agreement with the committed YOLOv8m
+checkpoint is $0.002$. The architecture is YOLOv8m; the learned weights are not
+the ones stored anywhere in either repository. Neither file matches a model
+evaluated in this paper, and neither is the export of the other.
+
+\begin{table}[t]
+\centering
+\caption{The evaluated models against the two artifacts stored under one name in
+the deployment project's \texttt{weights} directory. Deployment columns are
+measured, not read off a report: each file was matched against every checkpoint
+committed here and against the published Ultralytics backbones by a
+scale-invariant kernel comparison with batch normalisation folded. Agreement is
+$1.0$ when one kernel is a positive scalar multiple of the other, which is what
+folding imposes; it is reported to three decimal places for the closest
+checkpoint found. Controls: a checkpoint against its own export scores $1.0$; two
+seeds of one architecture score $0.003$. All artifacts declare exactly one class.}
+\label{tab:artifact}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+ & evaluated here & \texttt{best.pt} & \texttt{best.onnx} \\
+\midrule
+conv layers (measured)  & $64$ & $64$ & $84$ \\
+backbone implied        & YOLOv8s & YOLOv8s & YOLOv8m \\
+parameters (measured)   & $11.16$\,M & $11.16$\,M & $25.88$\,M \\
+storage precision       & fp16 & fp16 & fp32 \\
+classes (measured)      & 1 & 1 & 1 \\
+agreement with closest
+  match here             & $1.0$ & $0.003$ & $0.002$ \\
+provenance manifest     & yes & no & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The consequence for the deployment project is concrete. It ships two models, not
+one, under a single name; a build step that loads \texttt{best.onnx} and a step
+that loads \texttt{best.pt} do not run the same detector; and the file that any
+given evaluation of ``the model'' measured is not recorded. Whichever of the two
+was flashed to the aircraft, the other is one filename away.
+
+\paragraph{The device sets a hard boundary.} The target is a Jetson Nano
+($4$\,GB, Maxwell generation, JetPack 4.6 / L4T 32.7.6, CUDA 10.2, TensorRT 8.2,
+Python 3.6). Inference is onboard and the ground station is a client; a FastAPI
+service backed by a PostGIS store handles missions, detections, operator
+adjudication and report generation, with a web frontend providing a map view, a
+Grad-CAM comparison and an adjudication workflow. Two features of this design
+matter for how the present results should be read.
 
 First, \emph{the backend runs no model}. Its image-upload detection endpoint is a
 development stub returning a fixed detection with a fixed confidence, and the
 endpoint's own docstring cites the project requirements (\S2.2) as ruling out
-server-side inference. This is the right architecture for the task---the sensor
-is on the aircraft, and the ground station's job is bookkeeping, human review and
+server-side inference. This is the right architecture for the task---the sensor is
+on the aircraft, and the ground station's job is bookkeeping, human review and
 reporting---but it has a consequence for reporting: no throughput, latency or
 accuracy figure obtained from the backend describes detection performance. A
 system diagram that shows a detector on both sides of the radio link is
 architecturally wrong as well as unsupported.
 
 Second, \emph{the export path is constrained by the device}. The detector is
-exported to ONNX at a fixed $640\times640$ input with opset 12 and non-maximum
-suppression left out of the graph, then compiled on the target with
-\texttt{trtexec --fp16}. The opset ceiling is set by the platform, not by
-preference: JetPack 4.6 ships TensorRT 8.2, and an engine produced for a newer
-TensorRT cannot be loaded. The engine must be built on the device; an engine
-compiled on a desktop GPU will not run on Maxwell. The ONNX file is portable and
-the engine is not, which is a common source of edge numbers that cannot be
-reproduced from the repository that reports them.
+exported to ONNX at a fixed $640\times640$ input with non-maximum suppression left
+out of the graph, then compiled on the target with \texttt{trtexec --fp16}. The
+opset ceiling is set by the platform, not by preference: JetPack 4.6 ships
+TensorRT 8.2, and an engine produced for a newer TensorRT cannot be loaded. The
+engine must be built on the device; an engine compiled on a desktop GPU will not
+run on Maxwell. The ONNX file is portable and the engine is not, which is a common
+source of edge numbers that cannot be reproduced from the repository that reports
+them. The precision choice is likewise the device's: FP16 is what the platform
+makes cheap, and it is what any credible edge number must be quoted at.
 
-\paragraph{The provenance gap.} Our evaluation and the deployment diverged, and
-neither repository records where. The models evaluated here are YOLOv8s
-($11.2$\,M parameters) and YOLOv8n ($3.0$\,M) trained on the rebuilt split
-$3{,}907/181/189$ and evaluated on a leak-audited test set. The deployment
-project's committed evidence points elsewhere: its training script sets the base
-model to \texttt{yolov8m.pt}, its committed training report documents a
-$75$-epoch YOLOv8m run on the pre-rebuild split ($5{,}723/455/221$), and the ONNX
-file it ships is $103.6$\,MB beside a $42.7$\,MB PyTorch checkpoint of the same
-name. The parameter ratio between the two backbones is $25.9/11.2 = 2.31$; the
-file-size ratio is $103.6/42.7 = 2.32$. Both artifacts declare one class
-(\texttt{Landmine}), so this is not the class-count confusion we corrected
-earlier in this project's own documentation---it is a question of which backbone
-and which split. Which file was actually flashed to the device is not recorded in
-either repository.
+\paragraph{Why the vocabulary failed, and what prevents it.} The failure just
+measured is worth naming precisely, because the vocabulary of the field does not
+cover it. The literature on leakage describes \emph{data} crossing a split
+boundary. What happened here is an \emph{artifact} crossing a project boundary: a
+checkpoint was produced, reported, and deployed, and the link between the reported
+model and the deployed model was a filename that a different model then reused.
+Every individual step was reasonable. The training run is documented; the report is
+committed; the weights directory has a README explaining how to regenerate the
+checkpoint. The failure is compositional, and it is invisible precisely because
+each step looks correct in isolation. The only place it becomes visible is a
+comparison of the artifacts themselves, which no one runs because the filenames
+agree.
 
-\begin{table}[t]
-\centering
-\caption{What was evaluated against what was deployed. The right-hand column is
-assembled from the deployment project's training script, its committed report and
-the size of the ONNX file it ships; the three agree with each other. Neither
-repository records which file reached the device.}
-\label{tab:artifact}
-\scriptsize
-\begin{tabular}{lll}
-\toprule
- & evaluated here & deployment artifacts \\
-\midrule
-backbone & YOLOv8s & YOLOv8m \\
-parameters & $11.2$\,M & $25.9$\,M \\
-classes & 1 (\texttt{Landmine}) & 1 (\texttt{Landmine}) \\
-split & v2, $3{,}907/181/189$ & v1, $5{,}723/455/221$ \\
-leak-audited & yes, $30$ removed & no \\
-provenance & manifest digest & not recorded \\
-evaluated here & --- & no \\
-\bottomrule
-\end{tabular}
-\end{table}
+The remedy is narrow and cheap. A commit hash identifies the \emph{code} that
+produced a model, not the model. A checkpoint manifest---file name, SHA-256,
+backbone, class list, split digest, and the export parameters used to produce the
+ONNX---identifies the model, and it can be verified from the artifact in a few
+seconds without re-running anything. This paper ships such a manifest for the
+evaluated models (Section~\ref{sec:availability}), and the audit script that
+produced Table~\ref{tab:artifact} is committed alongside it, so the same check can
+be run against any future deployment tree. The deployment side has no such
+manifest, and the cost of that absence is now visible as two different models under
+one name.
 
-This is a leakage failure of a different kind, and it is worth naming precisely,
-because the vocabulary of the field does not cover it. The literature on leakage
-describes \emph{data} crossing a split boundary. What happened here is an
-\emph{artifact} crossing a project boundary: a checkpoint was produced, reported,
-and deployed, and the report describing it was filed in a directory that was later
-emptied by a rebuild. Every individual step was reasonable. The training run is
-documented; the report is committed; the weights directory has a README
-explaining how to regenerate the checkpoint. The failure is compositional. The
-only link between the evaluated model and the deployed model was a filename, and
-the filename was reused.
+\paragraph{What remains unmeasured.} The single most important number for the
+system half of this work---on-device latency at FP16---is absent, and this paper
+does not guess it. The deployment repository contains no committed timing record:
+its edge figures appear in prose in a README, no run artifacts are stored, and none
+of them can be verified, re-derived, or compared with Table~\ref{tab:size}. We do
+not import them. A host-side measurement is no substitute: the exported graphs run
+on this host only under a CPU runtime, whose latency is dominated by the CPU and is
+not comparable to the GPU numbers in Table~\ref{tab:size}, let alone to a device
+figure. Quoting either against the other would repeat exactly the class of error
+this paper is written against.
 
-The methodological recommendation is narrow and cheap. A commit hash identifies
-the \emph{code} that produced a model, not the model. A checkpoint manifest---file
-name, SHA-256, backbone, class list, split digest, and the export parameters used
-to produce the ONNX---identifies the model, and it can be verified from the
-artifact in a few seconds without re-running anything. This paper ships such a
-manifest for the evaluated models (Section~\ref{sec:availability}). The deployment
-side does not, and the cost of that absence is exactly the ambiguity in
-Table~\ref{tab:artifact}: a defensible claim that a detector of this family runs
-on this hardware, and no defensible claim about which one.
-
-\paragraph{What remains unmeasured.} The deployment repository contains no
-committed timing record. Its edge numbers appear in prose in its README, no run
-artifacts are stored, and therefore none of them can be verified, re-derived, or
-compared with Table~\ref{tab:size}. We do not import them. The gap is not a
-contradiction to be argued with but an absence to be filled: the models evaluated
-here are exported and ready to run onboard, and producing an on-device number for
-one of them is an instrumentation task---build the engine on the device, run the
-existing per-stage timing harness, commit its summary---rather than a change of
-method. Until that is done this paper makes no claim about edge throughput,
-energy, or thermal behaviour, and the deployment project's architecture should be
-read as design intent rather than as a validated result.
+What we can do instead is make the missing measurement a mechanical task rather
+than an open question. We commit a device-measurement procedure
+(\texttt{docs/EDGE\_MEASUREMENT.md}) that fixes the artifact (a named SHA-256), the
+build command (on-device \texttt{trtexec} at FP16), the harness, and the fields a
+valid run must report---per-stage timings, frame count, and the number of warm-up
+frames discarded. When the device is available, an on-device number for one of the
+models above is an instrumentation run against that procedure, not a change of
+method. Until it is run, this paper makes no claim about edge throughput, energy,
+or thermal behaviour, and the deployment architecture should be read as design
+intent rather than as a validated result.

@@ -22,7 +22,7 @@ system. The task is nonetheless a useful stress test for detection methodology,
 because the class is rare, the imagery is heterogeneous, and the published data
 reuse is heavy.
 
-\paragraph{What we found.} Three results organise the paper.
+\paragraph{What we found.} Four results organise the paper.
 
 \begin{enumerate}[leftmargin=1.2em,itemsep=2pt]
 \item \textbf{The split leaks, and the leak is measurable.} The combined
@@ -65,6 +65,17 @@ that mechanism. Where the baseline threshold transfers well, the second stage ha
 nothing to add; where the selection rule picks a near-inert classifier, it actively
 subtracts. Reporting a pooled mean would have hidden this entirely; we report the
 per-seed structure instead.
+
+\item \textbf{The model and the system are two different objects, and the gap is
+measurable.} We check the export rather than assume it: across the released
+detector seeds, the ONNX graph reproduces the checkpoint to within
+$10^{-3}$. The graph carries no operating point---no NMS, no threshold---so the
+detector that runs is defined by the caller, the same separation the metric
+argument makes. And the deployment tree's two files named \texttt{best} are two
+different models (YOLOv8s and YOLOv8m), neither evaluated here, established by a
+calibrated artifact comparison rather than by reading a report. On-device latency
+is the one number we cannot report, and we say so rather than import a prose
+figure.
 \end{enumerate}
 
 \paragraph{Why this is worth publishing.} None of the three findings required a
@@ -100,10 +111,13 @@ analysis showing when the second stage is not worth its cost
 separation between attribution and correctness, showing that the image-level
 classifier's accuracy is not accompanied by object-level evidence
 (Section~\ref{sec:gradcam}).
-\item A documented instance of \emph{artifact} drift: the checkpoint behind the
-accompanying deployment project differs from every checkpoint evaluated here in
-both backbone and split, and neither repository records the transition. We give
-the artifact-level account that would have prevented it
+\item A measured account of the model-to-system boundary: host-verified export
+parity for the released detector (maximum deviation $6.1\times10^{-4}$), the
+export contract the device imposes (opset, fixed input, no NMS or threshold in
+the graph), and a calibrated artifact comparison showing that the two files the
+deployment tree stores under one name are two different models, neither of which
+is evaluated here. We give the manifest that would have prevented the drift and a
+device-measurement procedure for the number we cannot yet report
 (Section~\ref{sec:system}).
 \end{itemize}
 
@@ -111,7 +125,7 @@ Section~\ref{sec:related} positions the work; Section~\ref{sec:data} describes t
 corpus and its provenance; Section~\ref{sec:audit} the audit;
 Sections~\ref{sec:method}--\ref{sec:protocol} the models and protocol;
 Section~\ref{sec:results} the results; Section~\ref{sec:discussion} the
-discussion; Section~\ref{sec:system} the deployment architecture and the
+discussion; Section~\ref{sec:system} the model-to-system boundary and the
 artifact-drift finding; Sections~\ref{sec:limitations}--\ref{sec:ethics}
 limitations and ethics. Code, weights, tables and the frozen split manifest
 accompany the paper (Section~\ref{sec:availability}).
