@@ -37,9 +37,9 @@ This is the same separation that Section~\ref{sec:results} argues for at the lev
 of metrics: an artifact does not have an operating point, and reporting one as
 though it did is the category error this paper is about.
 
-\paragraph{Two files, one name, two models.} The deployment project stores its
-weights under the name \texttt{best}. Its \texttt{weights} directory holds
-\texttt{best.pt} and \texttt{best.onnx}. By the convention every training
+\paragraph{Two files, one name, two models.} The deployment directory stores its
+weights under the name \texttt{best}. It holds \texttt{best.pt} and
+\texttt{best.onnx}. By the convention every training
 framework follows, those two files are one model in two formats: the checkpoint
 and its export. They are not. \texttt{best.pt} is a YOLOv8s model of
 $11.16$\,M parameters; \texttt{best.onnx} is a YOLOv8m model of $25.88$\,M, more
@@ -164,8 +164,11 @@ seconds without re-running anything. This paper ships such a manifest for the
 evaluated models (Section~\ref{sec:availability}), and the audit script that
 produced Table~\ref{tab:artifact} is committed alongside it, so the same check can
 be run against any future deployment tree. The deployment side has no such
-manifest, and the cost of that absence is now visible as two different models under
-one name.
+manifest. Nor are its two artifacts under version control at all: the directory
+holding them is excluded from the repository, and the single file tracked under
+that name documents how to regenerate weights rather than which run produced the
+shipped files. The cost of the absence is now visible as two different models under
+one name, neither of which can be pinned by content.
 
 \paragraph{What remains unmeasured.} The single most important number for the
 system half of this work---on-device latency at FP16---is absent, and this paper
